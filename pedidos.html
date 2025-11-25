@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pedidos - Café La Cabaña</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+    <div id="root"></div>
+    
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <script type="text/babel">
+        const PedidosPanel = () => {
+          const [orders, setOrders] = React.useState([]);
+          const [filter, setFilter] = React.useState('all');
+
+          React.useEffect(() => {
+            loadOrders();
+            const interval = setInterval(loadOrders, 3000);
+            return () => clearInterval(interval);
+          }, []);
+
+          const loadOrders = () => {
+            const savedOrders = localStorage.getItem('cafe_orders');
+            if (savedOrders) {
+              setOrders(JSON.parse(savedOrders));
+            }
+          };
+
+          const updateOrderStatus = (orderId, newStatus) => {
+            const updatedOrders = orders.map(order =>
+              order.id === orderId ? { ...order, status: newStatus } : order
+            );
+            setOrders(updatedOrders);
+            localStorage.setItem('cafe_orders', JSON.stringify(updatedOrders));
+          };
+
+          const deleteOrder = (orderId) => {
+            if (confirm('¿Eliminar este pedido?')) {
+              const updatedOrders = orders.filter(order => order.id !== orderId);
+              setOrders(updatedOrders);
+              localStorage.setItem('cafe_orders', JSON.stringify(updatedOrders));
+            }
+          };
+
+          const getStatusColor = (status) => {
+            switch(status) {
+              case 'pending': return 'bg-yellow-100 text-yellow-800 border-yellow-300';
+              case 'preparing': return 'bg-blue-100 text-blue-800 border-blue-300';
+              case 'ready': return 'bg-green-100 text-green-800 border-green-300';
+              case 'delivered': return 'bg-gray-100 text-gray-800 border-gray-300';
+              default: return 'bg-gray-100 text-gray-800 border-gray-300';
+            }
+          };
+
+          const getStatusText = (status) => {
+            switch(status) {
+              case 'pending': return '🔔 Pendiente';
+              case 'preparing': return '👨‍🍳 Preparando';
+              case 'ready': return '✅ Listo';
+              case 'delivered': return '🎉 Entregado';
+              default: return status;
+            }
+          };
+
+          const filteredOrders = orders.filter(order => {
+            if (filter === 'all') return true;
+            return order.status === filter;
+          });
+
+          const stats = {
+            pending: orders.filter(o => o.status === 'pending').length,
+            preparing: orders.filter(o => o.status === 'preparing').length,
+            ready: orders.filter(o => o.status === 'ready').length,
+            delivered: orders.filter(o => o.status === 'delivered').length
+          };
+
+          return (
+            <div className="min-h-screen bg-gray-100">
+              <header className="bg-gradient-to-r from-amber-800 to-orange-700 text-white shadow-lg sticky top-0 z-40">
+                <div className="container mx-auto px-4 py-4">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <h1 className="text-2xl md:text-3xl font-bold">📋 Panel de Pedidos</h1>
+                      <p className="text-amber-100 text-sm">Café La Cabaña</p>
+                    </div>
+                    <div className="flex gap-2">
+                      <a 
+                        href="index.html"
+                        className="bg-white text-amber-800 px-3 py-2 rounded-lg font-semibold hover:bg-amber-100 transition text-sm"
+                      >
+                        Menú
+                      </a>
+                      <a 
+                        href="admin.html"
+                        className="bg-white text-amber-800 px-3 py-2 rounded-lg font-semibold hover:bg-amber-100 transition text-sm"
+                      >
+                        Admin
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </header>
+
+              <div className="container mx-auto px-4 py-6">
+                {/* Estadísticas */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                  <div className="bg-yellow-50 border-2 border-yellow-200 rounded-lg p-4">
+                    <div className="text-yellow-600 text-sm font-semibold">Pendientes</div>
+                    <div className="text-3xl font-bold text-yellow-700">{stats.pending}</div>
+                  </div>
+                  <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-4">
+                    <div className="text-blue-600 text-sm font-semibold">Preparando</div>
+                    <div className="text-3xl font-bold text-blue-700">{stats.preparing}</div>
+                  </div>
+                  <div className="bg-green-50 border-2 border-green-200 rounded-lg p-4">
+                    <div className="text-green-600 text-sm font-semibold">Listos</div>
+                    <div className="text-3xl font-bold text-green-700">{stats.ready}</div>
+                  </div>
+                  <div className="bg-gray-50 border-2 border-gray-200 rounded-lg p-4">
+                    <div className="text-gray-600 text-sm font-semibold">Entregados</div>
+                    <div className="text-3xl font-bold text-gray-700">{stats.delivered}</div>
+                  </div>
+                </div>
+
+                {/* Filtros */}
+                <div className="bg-white rounded-lg shadow p-4 mb-6">
+                  <div className="flex gap-2 overflow-x-auto">
+                    <button
+                      onClick={() => setFilter('all')}
+                      className={`px-4 py-2 rounded-lg font-semibold whitespace-nowrap transition ${
+                        filter === 'all' ? 'bg-amber-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      Todos ({orders.length})
+                    </button>
+                    <button
+                      onClick={() => setFilter('pending')}
+                      className={`px-4 py-2 rounded-lg font-semibold whitespace-nowrap transition ${
+                        filter === 'pending' ? 'bg-yellow-500 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      🔔 Pendientes ({stats.pending})
+                    </button>
+                    <button
+                      onClick={() => setFilter('preparing')}
+                      className={`px-4 py-2 rounded-lg font-semibold whitespace-nowrap transition ${
+                        filter === 'preparing' ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      👨‍🍳 Preparando ({stats.preparing})
+                    </button>
+                    <button
+                      onClick={() => setFilter('ready')}
+                      className={`px-4 py-2 rounded-lg font-semibold whitespace-nowrap transition ${
+                        filter === 'ready' ? 'bg-green-500 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      ✅ Listos ({stats.ready})
+                    </button>
+                  </div>
+                </div>
+
+                {/* Lista de Pedidos */}
+                {filteredOrders.length === 0 ? (
+                  <div className="bg-white rounded-lg shadow p-12 text-center">
+                    <div className="text-6xl mb-4">📋</div>
+                    <p className="text-gray-500 text-lg">No hay pedidos {filter !== 'all' ? `en estado "${getStatusText(filter)}"` : ''}</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {filteredOrders.map(order => (
+                      <div key={order.id} className={`bg-white rounded-lg shadow-lg overflow-hidden border-2 ${getStatusColor(order.status)}`}>
+                        <div className="bg-gradient-to-r from-amber-100 to-orange-100 px-6 py-4">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <div className="text-2xl font-bold text-gray-800">Pedido #{order.id}</div>
+                              <div className="text-sm text-gray-600">{order.timestamp}</div>
+                              {order.customerName && (
+                                <div className="text-sm font-semibold text-gray-700 mt-1">
+                                  👤 {order.customerName}
+                                </div>
+                              )}
+                            </div>
+                            <span className={`px-4 py-2 rounded-full text-sm font-bold border-2 ${getStatusColor(order.status)}`}>
+                              {getStatusText(order.status)}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="p-6">
+                          <div className="space-y-3 mb-6">
+                            {order.items.map((item, index) => (
+                              <div key={index} className="flex justify-between items-center border-b pb-2">
+                                <div>
+                                  <span className="font-semibold text-lg">{item.quantity}x</span>
+                                  <span className="ml-2 text-gray-800">{item.name}</span>
+                                </div>
+                                <span className="font-bold text-amber-700">${item.price * item.quantity}</span>
+                              </div>
+                            ))}
+                          </div>
+
+                          {order.notes && (
+                            <div className="bg-yellow-50 border-l-4 border-yellow-400 p-3 mb-4">
+                              <div className="text-xs text-gray-600 font-semibold">NOTAS:</div>
+                              <div className="text-sm text-gray-800">{order.notes}</div>
+                            </div>
+                          )}
+
+                          <div className="flex justify-between items-center mb-6 bg-amber-50 p-4 rounded-lg">
+                            <span className="text-xl font-bold text-gray-800">TOTAL:</span>
+                            <span className="text-3xl font-bold text-amber-700">${order.total}</span>
+                          </div>
+
+                          {/* Botones de estado */}
+                          <div className="grid grid-cols-2 gap-2 mb-3">
+                            {order.status === 'pending' && (
+                              <button
+                                onClick={() => updateOrderStatus(order.id, 'preparing')}
+                                className="bg-blue-500 text-white py-2 rounded-lg font-semibold hover:bg-blue-600 transition"
+                              >
+                                👨‍🍳 Preparar
+                              </button>
+                            )}
+                            {order.status === 'preparing' && (
+                              <button
+                                onClick={() => updateOrderStatus(order.id, 'ready')}
+                                className="bg-green-500 text-white py-2 rounded-lg font-semibold hover:bg-green-600 transition"
+                              >
+                                ✅ Marcar Listo
+                              </button>
+                            )}
+                            {order.status === 'ready' && (
+                              <button
+                                onClick={() => updateOrderStatus(order.id, 'delivered')}
+                                className="bg-purple-500 text-white py-2 rounded-lg font-semibold hover:bg-purple-600 transition"
+                              >
+                                🎉 Entregar
+                              </button>
+                            )}
+                            <button
+                              onClick={() => deleteOrder(order.id)}
+                              className="bg-red-500 text-white py-2 rounded-lg font-semibold hover:bg-red-600 transition"
+                            >
+                              🗑️ Eliminar
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        };
+
+        ReactDOM.render(<PedidosPanel />, document.getElementById('root'));
+    </script>
+</body>
+</html>
