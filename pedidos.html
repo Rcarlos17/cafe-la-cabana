@@ -34,6 +34,7 @@
       window.firestoreDoc = doc;
       window.firestoreUpdateDoc = updateDoc;
       window.firestoreDeleteDoc = deleteDoc;
+      window.firebaseReady = true;
     </script>
 
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -45,30 +46,74 @@
           const [orders, setOrders] = React.useState([]);
           const [filter, setFilter] = React.useState('all');
           const [loading, setLoading] = React.useState(true);
+          const [error, setError] = React.useState(null);
 
           React.useEffect(() => {
-            // Escuchar cambios en tiempo real de Firebase
-            const q = window.firestoreQuery(
-              window.firestoreCollection(window.firebaseDB, 'orders'),
-              window.firestoreOrderBy('createdAt', 'desc')
-            );
+            const waitForFirebase = setInterval(() => {
+              if (window.firebaseReady) {
+                clearInterval(waitForFirebase);
+                startListening();
+              }
+            }, 100);
 
-            const unsubscribe = window.firestoreOnSnapshot(q, (snapshot) => {
-              const ordersData = [];
-              snapshot.forEach((doc) => {
-                const data = doc.data();
-                ordersData.push({
-                  id: doc.id,
-                  ...data,
-                  timestamp: data.createdAt ? new Date(data.createdAt.seconds * 1000).toLocaleString('es-MX') : 'Ahora'
-                });
-              });
-              setOrders(ordersData);
-              setLoading(false);
-            });
-
-            return () => unsubscribe();
+            return () => clearInterval(waitForFirebase);
           }, []);
+
+          const startListening = () => {
+            try {
+              const ordersRef = window.firestoreCollection(window.firebaseDB, 'orders');
+              
+              const unsubscribe = window.firestoreOnSnapshot(ordersRef, 
+                (snapshot) => {
+                  console.log('Snapshot recibido, documentos:', snapshot.size);
+                  const ordersData = [];
+                  
+                  snapshot.forEach((doc) => {
+                    const data = doc.data();
+                    console.log('Documento:', doc.id, data);
+                    
+                    let timestamp = 'Ahora';
+                    if (data.createdAt) {
+                      try {
+                        if (data.createdAt.seconds) {
+                          timestamp = new Date(data.createdAt.seconds * 1000).toLocaleString('es-MX');
+                        } else {
+                          timestamp = new Date(data.createdAt).toLocaleString('es-MX');
+                        }
+                      } catch (e) {
+                        console.error('Error parseando fecha:', e);
+                      }
+                    }
+                    
+                    ordersData.push({
+                      id: doc.id,
+                      customerName: data.customerName || 'Cliente',
+                      items: data.items || [],
+                      total: data.total || 0,
+                      notes: data.notes || '',
+                      status: data.status || 'pending',
+                      timestamp: timestamp
+                    });
+                  });
+                  
+                  console.log('Total pedidos procesados:', ordersData.length);
+                  setOrders(ordersData);
+                  setLoading(false);
+                },
+                (err) => {
+                  console.error('Error en snapshot:', err);
+                  setError('Error al cargar pedidos: ' + err.message);
+                  setLoading(false);
+                }
+              );
+
+              return () => unsubscribe();
+            } catch (err) {
+              console.error('Error iniciando listener:', err);
+              setError('Error al conectar con Firebase: ' + err.message);
+              setLoading(false);
+            }
+          };
 
           const updateOrderStatus = async (orderId, newStatus) => {
             try {
@@ -78,7 +123,7 @@
               });
             } catch (error) {
               console.error('Error al actualizar:', error);
-              alert('Error al actualizar el pedido');
+              alert('Error al actualizar el pedido: ' + error.message);
             }
           };
 
@@ -90,7 +135,7 @@
                 );
               } catch (error) {
                 console.error('Error al eliminar:', error);
-                alert('Error al eliminar el pedido');
+                alert('Error al eliminar el pedido: ' + error.message);
               }
             }
           };
@@ -138,6 +183,23 @@
             );
           }
 
+          if (error) {
+            return (
+              <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+                <div className="text-center bg-white p-8 rounded-lg shadow">
+                  <div className="text-6xl mb-4">❌</div>
+                  <p className="text-xl text-red-600 mb-4">{error}</p>
+                  <button 
+                    onClick={() => window.location.reload()}
+                    className="bg-amber-600 text-white px-6 py-2 rounded-lg hover:bg-amber-700"
+                  >
+                    Recargar
+                  </button>
+                </div>
+              </div>
+            );
+          }
+
           return (
             <div className="min-h-screen bg-gray-100">
               <header className="bg-gradient-to-r from-amber-800 to-orange-700 text-white shadow-lg sticky top-0 z-40">
@@ -145,7 +207,7 @@
                   <div className="flex justify-between items-center">
                     <div>
                       <h1 className="text-2xl md:text-3xl font-bold">📋 Panel de Pedidos</h1>
-                      <p className="text-amber-100 text-sm">Café La Cabaña - Tiempo Real</p>
+                      <p className="text-amber-100 text-sm">Café La Cabaña - Tiempo Real ({orders.length} pedidos)</p>
                     </div>
                     <div className="flex gap-2">
                       <a 
@@ -228,7 +290,12 @@
                 {filteredOrders.length === 0 ? (
                   <div className="bg-white rounded-lg shadow p-12 text-center">
                     <div className="text-6xl mb-4">📋</div>
-                    <p className="text-gray-500 text-lg">No hay pedidos {filter !== 'all' ? `en estado "${getStatusText(filter)}"` : ''}</p>
+                    <p className="text-gray-500 text-lg">
+                      {orders.length === 0 
+                        ? 'No hay pedidos aún' 
+                        : `No hay pedidos en estado "${getStatusText(filter)}"`
+                      }
+                    </p>
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -238,7 +305,7 @@
                           <div className="flex justify-between items-start">
                             <div>
                               <div className="text-xl font-bold text-gray-800">
-                                Pedido: {order.id.substring(0, 8)}
+                                Pedido: #{order.id.substring(0, 8)}
                               </div>
                               <div className="text-sm text-gray-600">{order.timestamp}</div>
                               {order.customerName && (
