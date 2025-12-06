@@ -9,127 +9,42 @@
 <body>
     <div id="root"></div>
     
+    <!-- Firebase -->
+    <script type="module">
+      import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+      import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, deleteDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+      const firebaseConfig = {
+        apiKey: "AIzaSyAcnpjZmvIX1qdHkj4j0TTg13tOVYbZpn0",
+        authDomain: "cafe-la-cabana-30fa5.firebaseapp.com",
+        projectId: "cafe-la-cabana-30fa5",
+        storageBucket: "cafe-la-cabana-30fa5.firebasestorage.app",
+        messagingSenderId: "1013891358492",
+        appId: "1:1013891358492:web:a80b4dff4aafe1375ea4d9"
+      };
+
+      const app = initializeApp(firebaseConfig);
+      const db = getFirestore(app);
+      
+      window.firebaseDB = db;
+      window.firestoreCollection = collection;
+      window.firestoreAddDoc = addDoc;
+      window.firestoreOnSnapshot = onSnapshot;
+      window.firestoreDoc = doc;
+      window.firestoreUpdateDoc = updateDoc;
+      window.firestoreDeleteDoc = deleteDoc;
+      window.firestoreServerTimestamp = serverTimestamp;
+      window.firebaseReady = true;
+    </script>
+
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     
     <script type="text/babel">
         const AdminPanel = () => {
-          const [products, setProducts] = React.useState([
-            {
-              id: 1,
-              name: 'Café Americano',
-              category: 'hot',
-              price: 35,
-              description: 'Espresso suave con agua caliente',
-              image: 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=400&h=300&fit=crop'
-            },
-            {
-              id: 2,
-              name: 'Cappuccino',
-              category: 'hot',
-              price: 45,
-              description: 'Espresso con leche vaporizada y espuma cremosa',
-              image: 'https://images.unsplash.com/photo-1572442388796-11668a67e53d?w=400&h=300&fit=crop'
-            },
-            {
-              id: 3,
-              name: 'Latte',
-              category: 'hot',
-              price: 48,
-              description: 'Espresso con abundante leche vaporizada',
-              image: 'https://images.unsplash.com/photo-1561882468-9110e03e0f78?w=400&h=300&fit=crop'
-            },
-            {
-              id: 4,
-              name: 'Chocolate Caliente',
-              category: 'hot',
-              price: 42,
-              description: 'Chocolate premium con crema batida',
-              image: 'https://images.unsplash.com/photo-1517578239113-b03992dcdd25?w=400&h=300&fit=crop'
-            },
-            {
-              id: 5,
-              name: 'Frappé de Caramelo',
-              category: 'cold',
-              price: 55,
-              description: 'Café helado con caramelo y crema batida',
-              image: 'https://images.unsplash.com/photo-1551024601-bec78aea704b?w=400&h=300&fit=crop'
-            },
-            {
-              id: 6,
-              name: 'Smoothie de Fresa',
-              category: 'cold',
-              price: 50,
-              description: 'Fresas frescas con yogurt y miel',
-              image: 'https://images.unsplash.com/photo-1505252585461-04db1eb84625?w=400&h=300&fit=crop'
-            },
-            {
-              id: 7,
-              name: 'Limonada Mineral',
-              category: 'cold',
-              price: 38,
-              description: 'Limones frescos con agua mineral y hierbabuena',
-              image: 'https://images.unsplash.com/photo-1523677011781-c91d1bbe2f9d?w=400&h=300&fit=crop'
-            },
-            {
-              id: 8,
-              name: 'Café Frío',
-              category: 'cold',
-              price: 45,
-              description: 'Cold brew con hielo y un toque de vainilla',
-              image: 'https://images.unsplash.com/photo-1517487881594-2787fef5ebf7?w=400&h=300&fit=crop'
-            },
-            {
-              id: 9,
-              name: 'Cheesecake',
-              category: 'dessert',
-              price: 55,
-              description: 'Pay de queso cremoso con frutos rojos',
-              image: 'https://images.unsplash.com/photo-1533134486753-c833f0ed4866?w=400&h=300&fit=crop'
-            },
-            {
-              id: 10,
-              name: 'Brownie con Helado',
-              category: 'dessert',
-              price: 60,
-              description: 'Brownie de chocolate caliente con helado de vainilla',
-              image: 'https://images.unsplash.com/photo-1606313564559-2e0c5c2d5c6f?w=400&h=300&fit=crop'
-            },
-            {
-              id: 11,
-              name: 'Tarta de Manzana',
-              category: 'dessert',
-              price: 48,
-              description: 'Clásica tarta de manzana con canela',
-              image: 'https://images.unsplash.com/photo-1535920527002-b35e96722eb9?w=400&h=300&fit=crop'
-            },
-            {
-              id: 12,
-              name: 'Croissant',
-              category: 'snack',
-              price: 35,
-              description: 'Croissant de mantequilla recién horneado',
-              image: 'https://images.unsplash.com/photo-1555507036-ab1f4038808a?w=400&h=300&fit=crop'
-            },
-            {
-              id: 13,
-              name: 'Panini de Jamón',
-              category: 'snack',
-              price: 65,
-              description: 'Panini con jamón, queso y vegetales',
-              image: 'https://images.unsplash.com/photo-1509722747041-616f39b57569?w=400&h=300&fit=crop'
-            },
-            {
-              id: 14,
-              name: 'Galletas Caseras',
-              category: 'snack',
-              price: 25,
-              description: 'Pack de 3 galletas con chispas de chocolate',
-              image: 'https://images.unsplash.com/photo-1499636136210-6f4ee915583e?w=400&h=300&fit=crop'
-            }
-          ]);
-
+          const [products, setProducts] = React.useState([]);
+          const [loading, setLoading] = React.useState(true);
           const [showModal, setShowModal] = React.useState(false);
           const [editingProduct, setEditingProduct] = React.useState(null);
           const [formData, setFormData] = React.useState({
@@ -139,6 +54,7 @@
             description: '',
             image: ''
           });
+          const [isSaving, setIsSaving] = React.useState(false);
 
           const categories = [
             { id: 'hot', name: 'Bebidas Calientes' },
@@ -147,15 +63,44 @@
             { id: 'snack', name: 'Snacks' }
           ];
 
+          React.useEffect(() => {
+            const waitForFirebase = setInterval(() => {
+              if (window.firebaseReady) {
+                clearInterval(waitForFirebase);
+                startListening();
+              }
+            }, 100);
+            return () => clearInterval(waitForFirebase);
+          }, []);
+
+          const startListening = () => {
+            try {
+              const productsRef = window.firestoreCollection(window.firebaseDB, 'products');
+              const unsubscribe = window.firestoreOnSnapshot(productsRef, 
+                (snapshot) => {
+                  const productsData = [];
+                  snapshot.forEach((doc) => {
+                    productsData.push({ id: doc.id, ...doc.data() });
+                  });
+                  setProducts(productsData);
+                  setLoading(false);
+                },
+                (error) => {
+                  console.error('Error:', error);
+                  alert('Error al cargar productos');
+                  setLoading(false);
+                }
+              );
+              return () => unsubscribe();
+            } catch (error) {
+              console.error('Error:', error);
+              setLoading(false);
+            }
+          };
+
           const openAddModal = () => {
             setEditingProduct(null);
-            setFormData({
-              name: '',
-              category: 'hot',
-              price: '',
-              description: '',
-              image: ''
-            });
+            setFormData({ name: '', category: 'hot', price: '', description: '', image: '' });
             setShowModal(true);
           };
 
@@ -171,32 +116,49 @@
             setShowModal(true);
           };
 
-          const handleSubmit = (e) => {
+          const handleSubmit = async (e) => {
             e.preventDefault();
-            
-            if (editingProduct) {
-              // Editar producto existente
-              setProducts(products.map(p => 
-                p.id === editingProduct.id 
-                  ? { ...formData, id: p.id, price: parseFloat(formData.price) }
-                  : p
-              ));
-            } else {
-              // Agregar nuevo producto
-              const newProduct = {
-                ...formData,
-                id: Math.max(...products.map(p => p.id)) + 1,
-                price: parseFloat(formData.price)
+            setIsSaving(true);
+            try {
+              const productData = {
+                name: formData.name,
+                category: formData.category,
+                price: parseFloat(formData.price),
+                description: formData.description,
+                image: formData.image,
+                updatedAt: window.firestoreServerTimestamp()
               };
-              setProducts([...products, newProduct]);
+
+              if (editingProduct) {
+                const productRef = window.firestoreDoc(window.firebaseDB, 'products', editingProduct.id);
+                await window.firestoreUpdateDoc(productRef, productData);
+                alert('✅ Producto actualizado');
+              } else {
+                productData.createdAt = window.firestoreServerTimestamp();
+                await window.firestoreAddDoc(
+                  window.firestoreCollection(window.firebaseDB, 'products'),
+                  productData
+                );
+                alert('✅ Producto agregado');
+              }
+              setShowModal(false);
+              setFormData({ name: '', category: 'hot', price: '', description: '', image: '' });
+            } catch (error) {
+              console.error('Error:', error);
+              alert('❌ Error: ' + error.message);
+            } finally {
+              setIsSaving(false);
             }
-            
-            setShowModal(false);
           };
 
-          const deleteProduct = (id) => {
-            if (confirm('¿Estás seguro de eliminar este producto?')) {
-              setProducts(products.filter(p => p.id !== id));
+          const deleteProduct = async (id) => {
+            if (confirm('¿Eliminar este producto?')) {
+              try {
+                await window.firestoreDeleteDoc(window.firestoreDoc(window.firebaseDB, 'products', id));
+                alert('✅ Producto eliminado');
+              } catch (error) {
+                alert('❌ Error: ' + error.message);
+              }
             }
           };
 
@@ -204,9 +166,19 @@
             return categories.find(c => c.id === categoryId)?.name || categoryId;
           };
 
+          if (loading) {
+            return (
+              <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+                <div className="text-center">
+                  <div className="text-6xl mb-4 animate-bounce">☕</div>
+                  <p className="text-xl text-gray-600">Cargando...</p>
+                </div>
+              </div>
+            );
+          }
+
           return (
             <div className="min-h-screen bg-gray-100">
-              {/* Header */}
               <header className="bg-gradient-to-r from-amber-800 to-orange-700 text-white shadow-lg">
                 <div className="container mx-auto px-4 py-6">
                   <div className="flex justify-between items-center">
@@ -214,18 +186,15 @@
                       <h1 className="text-3xl font-bold">Panel de Administración</h1>
                       <p className="text-amber-100 text-sm mt-1">Café La Cabaña</p>
                     </div>
-                    <a 
-                      href="index.html"
-                      className="bg-white text-amber-800 px-4 py-2 rounded-lg font-semibold hover:bg-amber-100 transition"
-                    >
-                      Ver Menú
-                    </a>
+                    <div className="flex gap-2">
+                      <a href="index.html" className="bg-white text-amber-800 px-4 py-2 rounded-lg font-semibold hover:bg-amber-100 transition">Ver Menú</a>
+                      <a href="pedidos.html" className="bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700 transition">Pedidos</a>
+                    </div>
                   </div>
                 </div>
               </header>
 
               <div className="container mx-auto px-4 py-8">
-                {/* Estadísticas */}
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
                   <div className="bg-white rounded-lg shadow p-6">
                     <div className="text-gray-500 text-sm mb-1">Total Productos</div>
@@ -233,206 +202,122 @@
                   </div>
                   <div className="bg-white rounded-lg shadow p-6">
                     <div className="text-gray-500 text-sm mb-1">Bebidas Calientes</div>
-                    <div className="text-3xl font-bold text-orange-600">
-                      {products.filter(p => p.category === 'hot').length}
-                    </div>
+                    <div className="text-3xl font-bold text-orange-600">{products.filter(p => p.category === 'hot').length}</div>
                   </div>
                   <div className="bg-white rounded-lg shadow p-6">
                     <div className="text-gray-500 text-sm mb-1">Bebidas Frías</div>
-                    <div className="text-3xl font-bold text-blue-600">
-                      {products.filter(p => p.category === 'cold').length}
-                    </div>
+                    <div className="text-3xl font-bold text-blue-600">{products.filter(p => p.category === 'cold').length}</div>
                   </div>
                   <div className="bg-white rounded-lg shadow p-6">
                     <div className="text-gray-500 text-sm mb-1">Postres & Snacks</div>
-                    <div className="text-3xl font-bold text-pink-600">
-                      {products.filter(p => p.category === 'dessert' || p.category === 'snack').length}
-                    </div>
+                    <div className="text-3xl font-bold text-pink-600">{products.filter(p => p.category === 'dessert' || p.category === 'snack').length}</div>
                   </div>
                 </div>
 
-                {/* Botón Agregar */}
                 <div className="mb-6">
-                  <button
-                    onClick={openAddModal}
-                    className="bg-green-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-green-700 transition text-lg"
-                  >
+                  <button onClick={openAddModal} className="bg-green-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-green-700 transition text-lg">
                     ➕ Agregar Nuevo Producto
                   </button>
                 </div>
 
-                {/* Tabla de Productos */}
-                <div className="bg-white rounded-lg shadow overflow-hidden">
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead className="bg-gray-50 border-b">
-                        <tr>
-                          <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase">Imagen</th>
-                          <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase">Nombre</th>
-                          <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase">Categoría</th>
-                          <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase">Precio</th>
-                          <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase">Descripción</th>
-                          <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase">Acciones</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-200">
-                        {products.map(product => (
-                          <tr key={product.id} className="hover:bg-gray-50">
-                            <td className="px-6 py-4">
-                              <img 
-                                src={product.image} 
-                                alt={product.name}
-                                className="w-16 h-16 object-cover rounded-lg"
-                              />
-                            </td>
-                            <td className="px-6 py-4 font-semibold text-gray-800">{product.name}</td>
-                            <td className="px-6 py-4">
-                              <span className="px-3 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-800">
-                                {getCategoryName(product.category)}
-                              </span>
-                            </td>
-                            <td className="px-6 py-4 font-bold text-green-600">${product.price}</td>
-                            <td className="px-6 py-4 text-sm text-gray-600 max-w-xs truncate">{product.description}</td>
-                            <td className="px-6 py-4">
-                              <div className="flex gap-2">
-                                <button
-                                  onClick={() => openEditModal(product)}
-                                  className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 transition text-sm"
-                                >
-                                  ✏️ Editar
-                                </button>
-                                <button
-                                  onClick={() => deleteProduct(product.id)}
-                                  className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition text-sm"
-                                >
-                                  🗑️ Eliminar
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                {products.length === 0 ? (
+                  <div className="bg-white rounded-lg shadow p-12 text-center">
+                    <div className="text-6xl mb-4">📦</div>
+                    <p className="text-gray-500 text-lg mb-4">No hay productos registrados</p>
+                    <button onClick={openAddModal} className="bg-green-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-green-700 transition">
+                      Agregar primer producto
+                    </button>
                   </div>
-                </div>
+                ) : (
+                  <div className="bg-white rounded-lg shadow overflow-hidden">
+                    <div className="overflow-x-auto">
+                      <table className="w-full">
+                        <thead className="bg-gray-50 border-b">
+                          <tr>
+                            <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase">Imagen</th>
+                            <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase">Nombre</th>
+                            <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase">Categoría</th>
+                            <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase">Precio</th>
+                            <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase">Descripción</th>
+                            <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase">Acciones</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-200">
+                          {products.map(product => (
+                            <tr key={product.id} className="hover:bg-gray-50">
+                              <td className="px-6 py-4">
+                                <img src={product.image} alt={product.name} className="w-16 h-16 object-cover rounded-lg"/>
+                              </td>
+                              <td className="px-6 py-4 font-semibold text-gray-800">{product.name}</td>
+                              <td className="px-6 py-4">
+                                <span className="px-3 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-800">
+                                  {getCategoryName(product.category)}
+                                </span>
+                              </td>
+                              <td className="px-6 py-4 font-bold text-green-600">${product.price}</td>
+                              <td className="px-6 py-4 text-sm text-gray-600 max-w-xs truncate">{product.description}</td>
+                              <td className="px-6 py-4">
+                                <div className="flex gap-2">
+                                  <button onClick={() => openEditModal(product)} className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 transition text-sm">✏️ Editar</button>
+                                  <button onClick={() => deleteProduct(product.id)} className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition text-sm">🗑️ Eliminar</button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
               </div>
 
-              {/* Modal */}
               {showModal && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
                   <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
                     <div className="p-6">
                       <div className="flex justify-between items-center mb-6">
-                        <h2 className="text-2xl font-bold text-gray-800">
-                          {editingProduct ? 'Editar Producto' : 'Agregar Nuevo Producto'}
-                        </h2>
-                        <button 
-                          onClick={() => setShowModal(false)}
-                          className="text-gray-500 hover:text-gray-700 text-2xl"
-                        >
-                          ✕
-                        </button>
+                        <h2 className="text-2xl font-bold text-gray-800">{editingProduct ? 'Editar Producto' : 'Agregar Nuevo Producto'}</h2>
+                        <button onClick={() => setShowModal(false)} disabled={isSaving} className="text-gray-500 hover:text-gray-700 text-2xl">✕</button>
                       </div>
 
                       <form onSubmit={handleSubmit}>
                         <div className="space-y-4">
                           <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">
-                              Nombre del Producto
-                            </label>
-                            <input
-                              type="text"
-                              required
-                              value={formData.name}
-                              onChange={(e) => setFormData({...formData, name: e.target.value})}
-                              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
-                              placeholder="Ej: Café Americano"
-                            />
+                            <label className="block text-sm font-semibold text-gray-700 mb-2">Nombre del Producto *</label>
+                            <input type="text" required value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} 
+                              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500" placeholder="Ej: Café Americano" disabled={isSaving}/>
                           </div>
-
                           <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">
-                              Categoría
-                            </label>
-                            <select
-                              required
-                              value={formData.category}
-                              onChange={(e) => setFormData({...formData, category: e.target.value})}
-                              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
-                            >
-                              {categories.map(cat => (
-                                <option key={cat.id} value={cat.id}>{cat.name}</option>
-                              ))}
+                            <label className="block text-sm font-semibold text-gray-700 mb-2">Categoría *</label>
+                            <select required value={formData.category} onChange={(e) => setFormData({...formData, category: e.target.value})} 
+                              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500" disabled={isSaving}>
+                              {categories.map(cat => (<option key={cat.id} value={cat.id}>{cat.name}</option>))}
                             </select>
                           </div>
-
                           <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">
-                              Precio ($)
-                            </label>
-                            <input
-                              type="number"
-                              required
-                              min="0"
-                              step="0.01"
-                              value={formData.price}
-                              onChange={(e) => setFormData({...formData, price: e.target.value})}
-                              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
-                              placeholder="Ej: 45"
-                            />
+                            <label className="block text-sm font-semibold text-gray-700 mb-2">Precio ($) *</label>
+                            <input type="number" required min="0" step="0.01" value={formData.price} onChange={(e) => setFormData({...formData, price: e.target.value})} 
+                              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500" placeholder="Ej: 45" disabled={isSaving}/>
                           </div>
-
                           <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">
-                              Descripción
-                            </label>
-                            <textarea
-                              required
-                              value={formData.description}
-                              onChange={(e) => setFormData({...formData, description: e.target.value})}
-                              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
-                              rows="3"
-                              placeholder="Ej: Espresso suave con agua caliente"
-                            />
+                            <label className="block text-sm font-semibold text-gray-700 mb-2">Descripción *</label>
+                            <textarea required value={formData.description} onChange={(e) => setFormData({...formData, description: e.target.value})} 
+                              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500" rows="3" 
+                              placeholder="Ej: Espresso suave con agua caliente" disabled={isSaving}/>
                           </div>
-
                           <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">
-                              URL de la Imagen
-                            </label>
-                            <input
-                              type="url"
-                              required
-                              value={formData.image}
-                              onChange={(e) => setFormData({...formData, image: e.target.value})}
-                              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
-                              placeholder="https://ejemplo.com/imagen.jpg"
-                            />
-                            {formData.image && (
-                              <img 
-                                src={formData.image} 
-                                alt="Preview"
-                                className="mt-3 w-32 h-32 object-cover rounded-lg"
-                                onError={(e) => e.target.style.display = 'none'}
-                              />
-                            )}
+                            <label className="block text-sm font-semibold text-gray-700 mb-2">URL de la Imagen *</label>
+                            <input type="url" required value={formData.image} onChange={(e) => setFormData({...formData, image: e.target.value})} 
+                              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500" 
+                              placeholder="https://ejemplo.com/imagen.jpg" disabled={isSaving}/>
+                            {formData.image && (<img src={formData.image} alt="Preview" className="mt-3 w-32 h-32 object-cover rounded-lg" onError={(e) => e.target.style.display = 'none'}/>)}
                           </div>
                         </div>
-
                         <div className="flex gap-4 mt-6">
-                          <button
-                            type="submit"
-                            className="flex-1 bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700 transition"
-                          >
-                            {editingProduct ? '💾 Guardar Cambios' : '➕ Agregar Producto'}
+                          <button type="submit" disabled={isSaving} className="flex-1 bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700 transition disabled:bg-gray-400 disabled:cursor-not-allowed">
+                            {isSaving ? '⏳ Guardando...' : (editingProduct ? '💾 Guardar Cambios' : '➕ Agregar Producto')}
                           </button>
-                          <button
-                            type="button"
-                            onClick={() => setShowModal(false)}
-                            className="flex-1 bg-gray-300 text-gray-700 py-3 rounded-lg font-semibold hover:bg-gray-400 transition"
-                          >
-                            Cancelar
-                          </button>
+                          <button type="button" onClick={() => setShowModal(false)} disabled={isSaving} className="flex-1 bg-gray-300 text-gray-700 py-3 rounded-lg font-semibold hover:bg-gray-400 transition disabled:opacity-50">Cancelar</button>
                         </div>
                       </form>
                     </div>
@@ -447,14 +332,3 @@
     </script>
 </body>
 </html>
-```
-
-5. Clic en **"Commit changes..."** → **"Commit changes"**
-
----
-
-## **PASO 2: Acceder al panel de administración**
-
-Espera 1-2 minutos y ve a:
-```
-https://tu-usuario.github.io/cafe-la-cabana/admin.html
