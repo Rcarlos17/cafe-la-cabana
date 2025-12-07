@@ -13,10 +13,18 @@
 
   <!-- NAVBAR -->
   <div class="flex justify-between items-center p-4 bg-amber-800 text-white shadow">
-    <h1 class="text-2xl font-bold">☕ Café La Cabaña</h1>
-    <button id="cartBtn" class="bg-white text-amber-800 px-4 py-2 rounded font-semibold hover:bg-amber-100 transition">
-      🛒 Carrito (<span id="cartCount">0</span>)
-    </button>
+    <div>
+      <h1 class="text-2xl font-bold">☕ Café La Cabaña</h1>
+      <p id="usuarioNombre" class="text-sm text-amber-100"></p>
+    </div>
+    <div class="flex gap-2">
+      <button id="cartBtn" class="bg-white text-amber-800 px-4 py-2 rounded font-semibold hover:bg-amber-100 transition">
+        🛒 Carrito (<span id="cartCount">0</span>)
+      </button>
+      <button id="btnCerrarSesion" class="bg-red-600 text-white px-4 py-2 rounded font-semibold hover:bg-red-700 transition hidden">
+        🚪 Salir
+      </button>
+    </div>
   </div>
 
   <!-- CONTENEDOR PRINCIPAL -->
@@ -55,6 +63,45 @@
   </div>
 
   <script>
+    // VERIFICAR USUARIO LOGUEADO
+    window.addEventListener('DOMContentLoaded', () => {
+      const usuario = sessionStorage.getItem('usuario');
+      
+      if (!usuario) {
+        // Si no hay usuario, redirigir al login
+        alert('⚠️ Debes iniciar sesión para acceder al menú');
+        window.location.href = 'login.html';
+        return;
+      } else {
+        // Mostrar nombre del usuario
+        const usuarioData = JSON.parse(usuario);
+        const nombreElement = document.getElementById('usuarioNombre');
+        if (nombreElement) {
+          nombreElement.textContent = `👋 Hola, ${usuarioData.nombre.split(' ')[0]}`;
+        }
+        
+        // Mostrar botón de cerrar sesión
+        const btnCerrar = document.getElementById('btnCerrarSesion');
+        if (btnCerrar) {
+          btnCerrar.classList.remove('hidden');
+        }
+      }
+    });
+
+    // Botón cerrar sesión
+    document.addEventListener('DOMContentLoaded', () => {
+      const btnCerrar = document.getElementById('btnCerrarSesion');
+      if (btnCerrar) {
+        btnCerrar.addEventListener('click', () => {
+          if (confirm('¿Seguro que deseas cerrar sesión?')) {
+            sessionStorage.removeItem('usuario');
+            localStorage.removeItem('carrito'); // Limpiar carrito también
+            window.location.href = 'login.html';
+          }
+        });
+      }
+    });
+
     // CONFIGURACIÓN DE SUPABASE
     const SUPABASE_URL = 'https://cxcxtrhxkptchqmitvbr.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_QyiQjzIMUcj_x74gzUDjQw_aaODJR7R';
@@ -330,8 +377,29 @@
 
     // ENVIAR PEDIDO A SUPABASE
     document.getElementById('enviarPedidoBtn').addEventListener('click', async () => {
-      const nombre = document.getElementById('clienteNombre').value.trim();
-      const telefono = document.getElementById('clienteTelefono').value.trim();
+      // Obtener datos del usuario logueado
+      const usuarioSession = sessionStorage.getItem('usuario');
+      if (!usuarioSession) {
+        alert('⚠️ Sesión expirada. Por favor inicia sesión nuevamente.');
+        window.location.href = 'login.html';
+        return;
+      }
+
+      const usuarioData = JSON.parse(usuarioSession);
+      
+      // Pre-llenar los campos con los datos del usuario
+      const nombreInput = document.getElementById('clienteNombre');
+      const telefonoInput = document.getElementById('clienteTelefono');
+      
+      if (!nombreInput.value) {
+        nombreInput.value = usuarioData.nombre;
+      }
+      if (!telefonoInput.value) {
+        telefonoInput.value = usuarioData.telefono;
+      }
+
+      const nombre = nombreInput.value.trim();
+      const telefono = telefonoInput.value.trim();
       const notas = document.getElementById('clienteNotas').value.trim();
 
       if (!nombre) {
@@ -361,7 +429,8 @@
         notes: notas || null,
         items: items,
         total: parseFloat(total.toFixed(2)),
-        status: 'pending'
+        status: 'pending',
+        user_id: usuarioData.id // Guardar el ID del usuario
       };
 
       const btn = document.getElementById('enviarPedidoBtn');
@@ -383,8 +452,6 @@
         document.getElementById('cartCount').textContent = '0';
         document.getElementById('pedidoModal').classList.add('hidden');
         
-        document.getElementById('clienteNombre').value = '';
-        document.getElementById('clienteTelefono').value = '';
         document.getElementById('clienteNotas').value = '';
 
       } catch (error) {
