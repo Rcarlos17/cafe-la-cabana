@@ -1,433 +1,200 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Café La Cabaña - Menú</title>
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#92400e">
-    <script src="https://cdn.tailwindcss.com"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Café La Cabaña</title>
+  <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-    <div id="root"></div>
-    
-    <script type="module">
-      import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-      import { getFirestore, collection, addDoc, serverTimestamp, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
-      import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, GoogleAuthProvider, signInWithPopup } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
 
-      const firebaseConfig = {
-        apiKey: "AIzaSyAcnpjZmvIX1qdHkj4j0TTg13tOVYbZpn0",
-        authDomain: "cafe-la-cabana-30fa5.firebaseapp.com",
-        projectId: "cafe-la-cabana-30fa5",
-        storageBucket: "cafe-la-cabana-30fa5.firebasestorage.app",
-        messagingSenderId: "1013891358492",
-        appId: "1:1013891358492:web:a80b4dff4aafe1375ea4d9"
-      };
+<body class="bg-gray-100">
 
-      const app = initializeApp(firebaseConfig);
-      const db = getFirestore(app);
-      const auth = getAuth(app);
-      const googleProvider = new GoogleAuthProvider();
-      
-      window.firebaseDB = db;
-      window.firebaseAuth = auth;
-      window.googleProvider = googleProvider;
-      window.firestoreCollection = collection;
-      window.firestoreAddDoc = addDoc;
-      window.firestoreServerTimestamp = serverTimestamp;
-      window.firestoreOnSnapshot = onSnapshot;
-      window.createUserWithEmailAndPassword = createUserWithEmailAndPassword;
-      window.signInWithEmailAndPassword = signInWithEmailAndPassword;
-      window.signOut = signOut;
-      window.onAuthStateChanged = onAuthStateChanged;
-      window.signInWithPopup = signInWithPopup;
-      window.firebaseReady = true;
-      
-      console.log('✅ Firebase inicializado correctamente');
-    </script>
+  <!-- NAVBAR -->
+  <div class="flex justify-between items-center p-4 bg-amber-800 text-white shadow">
+    <h1 class="text-2xl font-bold">☕ Café La Cabaña</h1>
 
-    <script type="module">
-  import { collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    <div class="flex gap-4">
+      <button id="loginBtn" class="bg-white text-amber-800 px-4 py-2 rounded">Iniciar sesión</button>
+      <button id="cartBtn" class="bg-white text-amber-800 px-4 py-2 rounded">🛒 Carrito</button>
+    </div>
+  </div>
 
-  // Función para realizar el pedido
-  async function realizarPedido() {
-    const customerName = document.getElementById("nombre")?.value.trim() || "Cliente";
-    const notes = document.getElementById("notas")?.value.trim() || "";
+  <!-- CONTENEDOR PRINCIPAL -->
+  <div id="root" class="p-4"></div>
 
-    // Obtener carrito desde localStorage
-    const cartItems = JSON.parse(localStorage.getItem("cart")) || [];
+  <!-- MODAL LOGIN -->
+  <div id="loginModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
+    <div class="bg-white p-6 rounded shadow w-80">
+      <h2 class="text-xl font-bold mb-4">Iniciar sesión</h2>
 
-    if (cartItems.length === 0) {
-      alert("El carrito está vacío");
-      return;
+      <input id="emailInput" type="email" class="border p-2 w-full mb-2" placeholder="Correo">
+      <input id="passwordInput" type="password" class="border p-2 w-full mb-4" placeholder="Contraseña">
+
+      <button id="loginEmailBtn" class="bg-amber-700 text-white w-full p-2 rounded mb-2">Entrar</button>
+      <button id="loginGoogleBtn" class="bg-red-600 text-white w-full p-2 rounded">Entrar con Google</button>
+
+      <button id="closeLoginModal" class="mt-4 text-gray-500 underline w-full">Cerrar</button>
+    </div>
+  </div>
+
+  <!-- MODAL CARRITO -->
+  <div id="cartModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
+    <div class="bg-white p-6 rounded shadow w-96">
+      <h2 class="text-xl font-bold mb-4">🛒 Carrito</h2>
+      <div id="cartItems"></div>
+      <button id="checkoutBtn" class="bg-green-600 text-white w-full p-2 rounded mt-4">Realizar pedido</button>
+      <button id="closeCartModal" class="mt-4 text-gray-500 underline w-full">Cerrar</button>
+    </div>
+  </div>
+
+  <!-- MODAL DE PEDIDO -->
+  <div id="pedidoModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
+    <div class="bg-white p-6 rounded shadow w-96">
+      <h2 class="text-xl font-bold mb-4">Realizar Pedido</h2>
+
+      <input id="clienteNombre" class="border p-2 w-full mb-2" placeholder="Tu nombre">
+      <input id="clienteTelefono" class="border p-2 w-full mb-2" placeholder="Tu número">
+      <textarea id="clienteNotas" class="border p-2 w-full mb-4" placeholder="Notas adicionales"></textarea>
+
+      <button id="enviarPedidoBtn" class="bg-green-600 text-white w-full p-2 rounded">Enviar pedido</button>
+      <button id="cerrarPedidoModal" class="mt-4 text-gray-500 underline w-full">Cancelar</button>
+    </div>
+  </div>
+
+  <!-- FIREBASE CONFIG -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAcnpjZmvIX1qdHkj4j0TTg13tOVYbZpn0",
+      authDomain: "cafe-la-cabana-30fa5.firebaseapp.com",
+      projectId: "cafe-la-cabana-30fa5",
+      storageBucket: "cafe-la-cabana-30fa5.firebasestorage.app",
+      messagingSenderId: "1013891358492",
+      appId: "1:1013891358492:web:a80b4dff4aafe1375ea4d9"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+    const googleProvider = new GoogleAuthProvider();
+
+    window.db = db;
+    window.auth = auth;
+    window.googleProvider = googleProvider;
+    window.collection = collection;
+    window.addDoc = addDoc;
+    window.serverTimestamp = serverTimestamp;
+
+    console.log("🔥 Firebase cargado correctamente");
+  </script>
+  <!-- SCRIPT PARA ENVIAR PEDIDOS A FIRESTORE -->
+  <script>
+    async function enviarPedidoAFirebase(pedido) {
+      try {
+        await window.addDoc(window.collection(window.db, "orders"), {
+          ...pedido,
+          fecha: window.serverTimestamp()
+        });
+
+        console.log("✅ Pedido enviado correctamente");
+        return true;
+
+      } catch (error) {
+        console.error("❌ Error al guardar pedido:", error);
+        return false;
+      }
     }
 
-    const totalPrice = cartItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+    // EVENTO DEL BOTÓN "ENVIAR PEDIDO"
+    document.addEventListener("DOMContentLoaded", () => {
+      const btn = document.getElementById("enviarPedidoBtn");
 
-    try {
-      await addDoc(collection(window.firebaseDB, "orders"), {
-        customerName,
-        items: cartItems,
-        total: totalPrice,
-        notes,
-        status: "pending",
-        createdAt: serverTimestamp()
-      });
+      if (btn) {
+        btn.addEventListener("click", async () => {
+          const nombre = document.getElementById("clienteNombre").value;
+          const telefono = document.getElementById("clienteTelefono").value;
+          const notas = document.getElementById("clienteNotas").value;
 
-      alert("Pedido realizado con éxito");
-      localStorage.removeItem("cart");
-      window.location.href = "pedidos.html";
+          const carrito = JSON.parse(localStorage.getItem("carrito")) || [];
 
-    } catch (error) {
-      console.error("❌ Error al enviar pedido:", error);
-      alert("Hubo un error al enviar tu pedido");
-    }
-  }
-
-  // Conectar función al botón
-  const boton = document.getElementById("btnRealizarPedido");
-  if (boton) {
-    boton.addEventListener("click", realizarPedido);
-  }
-</script>
-
-
-    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    
-    <script type="text/babel">
-        const CafeLaCabana = () => {
-          const [user, setUser] = React.useState(null);
-          const [loading, setLoading] = React.useState(true);
-          const [showAuthModal, setShowAuthModal] = React.useState(false);
-          const [authMode, setAuthMode] = React.useState('login');
-          const [authData, setAuthData] = React.useState({ email: '', password: '', name: '', phone: '' });
-          const [authError, setAuthError] = React.useState('');
-          const [isAuthenticating, setIsAuthenticating] = React.useState(false);
-          const [menuItems, setMenuItems] = React.useState([]);
-          const [loadingProducts, setLoadingProducts] = React.useState(true);
-          const [cart, setCart] = React.useState([]);
-          const [showCart, setShowCart] = React.useState(false);
-          const [selectedCategory, setSelectedCategory] = React.useState('all');
-          const [showOrderModal, setShowOrderModal] = React.useState(false);
-          const [orderNotes, setOrderNotes] = React.useState('');
-          const [isSubmitting, setIsSubmitting] = React.useState(false);
-
-          const categories = [
-            { id: 'all', name: 'Todo' },
-            { id: 'hot', name: 'Calientes' },
-            { id: 'cold', name: 'Frías' },
-            { id: 'dessert', name: 'Postres' },
-            { id: 'snack', name: 'Snacks' }
-          ];
-
-          React.useEffect(() => {
-            const waitForFirebase = setInterval(() => {
-              if (window.firebaseReady) {
-                clearInterval(waitForFirebase);
-                loadProducts();
-              }
-            }, 100);
-            return () => clearInterval(waitForFirebase);
-          }, []);
-
-          const loadProducts = () => {
-            try {
-              const productsRef = window.firestoreCollection(window.firebaseDB, 'products');
-              const unsubscribe = window.firestoreOnSnapshot(productsRef, 
-                (snapshot) => {
-                  const productsData = [];
-                  snapshot.forEach((doc) => { productsData.push({ id: doc.id, ...doc.data() }); });
-                  setMenuItems(productsData);
-                  setLoadingProducts(false);
-                },
-                (error) => { 
-                  console.error('❌ Error cargando productos:', error); 
-                  setLoadingProducts(false); 
-                }
-              );
-              return () => unsubscribe();
-            } catch (error) {
-              console.error('❌ Error en loadProducts:', error);
-              setLoadingProducts(false);
-            }
-          };
-
-          React.useEffect(() => {
-            const waitForAuth = setInterval(() => {
-              if (window.firebaseReady) {
-                clearInterval(waitForAuth);
-                window.onAuthStateChanged(window.firebaseAuth, (user) => {
-                  if (user) {
-                    console.log('✅ Usuario autenticado:', user.email);
-                    setUser({ uid: user.uid, email: user.email, name: user.displayName || 'Cliente', phone: '' });
-                  } else {
-                    console.log('⚠️ No hay usuario autenticado');
-                    setUser(null);
-                    setShowAuthModal(true);
-                  }
-                  setLoading(false);
-                });
-              }
-            }, 100);
-            return () => clearInterval(waitForAuth);
-          }, []);
-
-          const handleRegister = async (e) => {
-            e.preventDefault();
-            setAuthError('');
-            setIsAuthenticating(true);
-            try {
-              if (!authData.name.trim()) throw new Error('Por favor ingresa tu nombre');
-              if (!authData.phone.trim()) throw new Error('Por favor ingresa tu teléfono');
-              const userCredential = await window.createUserWithEmailAndPassword(window.firebaseAuth, authData.email, authData.password);
-              await window.firestoreAddDoc(window.firestoreCollection(window.firebaseDB, 'users'), {
-                uid: userCredential.user.uid,
-                name: authData.name,
-                email: authData.email,
-                phone: authData.phone,
-                createdAt: window.firestoreServerTimestamp()
-              });
-              setUser({ uid: userCredential.user.uid, email: authData.email, name: authData.name, phone: authData.phone });
-              setShowAuthModal(false);
-              setAuthData({ email: '', password: '', name: '', phone: '' });
-            } catch (error) {
-              console.error('❌ Error en registro:', error);
-              if (error.code === 'auth/email-already-in-use') setAuthError('Este email ya está registrado');
-              else if (error.code === 'auth/weak-password') setAuthError('La contraseña debe tener al menos 6 caracteres');
-              else if (error.code === 'auth/invalid-email') setAuthError('Email inválido');
-              else setAuthError(error.message);
-            } finally {
-              setIsAuthenticating(false);
-            }
-          };
-
-          const handleLogin = async (e) => {
-            e.preventDefault();
-            setAuthError('');
-            setIsAuthenticating(true);
-            try {
-              await window.signInWithEmailAndPassword(window.firebaseAuth, authData.email, authData.password);
-              setShowAuthModal(false);
-              setAuthData({ email: '', password: '', name: '', phone: '' });
-            } catch (error) {
-              console.error('❌ Error en login:', error);
-              if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
-                setAuthError('Email o contraseña incorrectos');
-              } else {
-                setAuthError('Error al iniciar sesión');
-              }
-            } finally {
-              setIsAuthenticating(false);
-            }
-          };
-
-          const handleGoogleLogin = async () => {
-            setAuthError('');
-            setIsAuthenticating(true);
-            try {
-              const result = await window.signInWithPopup(window.firebaseAuth, window.googleProvider);
-              await window.firestoreAddDoc(window.firestoreCollection(window.firebaseDB, 'users'), {
-                uid: result.user.uid,
-                name: result.user.displayName || 'Cliente',
-                email: result.user.email,
-                phone: '',
-                createdAt: window.firestoreServerTimestamp()
-              });
-              setShowAuthModal(false);
-            } catch (error) {
-              console.error('❌ Error en Google login:', error);
-              if (error.code === 'auth/popup-closed-by-user') setAuthError('Inicio de sesión cancelado');
-              else setAuthError('Error al iniciar sesión con Google');
-            } finally {
-              setIsAuthenticating(false);
-            }
-          };
-
-          const handleLogout = async () => {
-            if (confirm('¿Cerrar sesión?')) {
-              try {
-                await window.signOut(window.firebaseAuth);
-                setCart([]);
-              } catch (error) {
-                console.error('❌ Error en logout:', error);
-              }
-            }
-          };
-
-          const addToCart = (item) => {
-            const existingItem = cart.find(i => i.id === item.id);
-            if (existingItem) {
-              setCart(cart.map(i => i.id === item.id ? { ...i, quantity: i.quantity + 1 } : i));
-            } else {
-              setCart([...cart, { ...item, quantity: 1 }]);
-            }
-          };
-
-          const removeFromCart = (itemId) => {
-            const existingItem = cart.find(i => i.id === itemId);
-            if (existingItem.quantity === 1) {
-              setCart(cart.filter(i => i.id !== itemId));
-            } else {
-              setCart(cart.map(i => i.id === itemId ? { ...i, quantity: i.quantity - 1 } : i));
-            }
-          };
-
-          const deleteFromCart = (itemId) => { setCart(cart.filter(i => i.id !== itemId)); };
-
-          const getTotal = () => { return cart.reduce((sum, item) => sum + (item.price * item.quantity), 0); };
-
-          const openOrderModal = () => {
-            if (cart.length === 0) {
-              alert('Tu carrito está vacío');
-              return;
-            }
-            setShowOrderModal(true);
-          };
-
-          const submitOrder = async (e) => {
-            e.preventDefault();
-            setIsSubmitting(true);
-            
-            try {
-              if (!user) throw new Error('No hay usuario autenticado');
-              
-              const order = {
-                userId: user.uid,
-                customerName: user.name,
-                customerEmail: user.email,
-                customerPhone: user.phone || 'No proporcionado',
-                items: cart.map(item => ({
-                  id: item.id,
-                  name: item.name,
-                  price: item.price,
-                  quantity: item.quantity,
-                  image: item.image
-                })),
-                total: getTotal(),
-                notes: orderNotes,
-                status: 'pending',
-                createdAt: window.firestoreServerTimestamp()
-              };
-              
-              const ordersRef = window.firestoreCollection(window.firebaseDB, 'orders');
-              const docRef = await window.firestoreAddDoc(ordersRef, order);
-              
-              setCart([]);
-              setOrderNotes('');
-              setShowOrderModal(false);
-              setShowCart(false);
-              
-              alert('Pedido realizado con éxito. ID: ' + docRef.id);
-              
-            } catch (error) {
-              alert('Error al enviar pedido: ' + error.message);
-            } finally {
-              setIsSubmitting(false);
-            }
-          };
-
-          const filteredItems = selectedCategory === 'all' ? menuItems : menuItems.filter(item => item.category === selectedCategory);
-
-          if (loading) {
-            return (
-              <div className="min-h-screen bg-gradient-to-br from-amber-50 to-orange-50 flex items-center justify-center">
-                <div className="text-center">
-                  <div className="text-6xl mb-4 animate-bounce">☕</div>
-                  <p className="text-xl text-gray-600">Cargando...</p>
-                </div>
-              </div>
-            );
+          if (!nombre || carrito.length === 0) {
+            alert("Debes escribir tu nombre y tener productos en el carrito.");
+            return;
           }
 
-          return (
-            <div className="min-h-screen bg-gradient-to-br from-amber-50 to-orange-50">
-              <header className="bg-gradient-to-r from-amber-800 to-orange-700 text-white shadow-lg sticky top-0 z-40">
-                <div className="container mx-auto px-4 py-4">
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-2">☕ Café La Cabaña</h1>
-                      <p className="text-amber-100 text-sm mt-1">Sabor que inspira tu día</p>
-                      {user && <p className="text-amber-200 text-xs mt-1">👤 Hola, {user.name}!</p>}
-                    </div>
-                    <div className="flex gap-2 items-center">
-                      <button onClick={() => setShowCart(!showCart)} className="relative bg-white text-amber-800 px-3 md:px-4 py-2 rounded-full font-semibold hover:bg-amber-100 transition flex items-center gap-2">
-                        🛒 <span className="hidden md:inline">{cart.length}</span>
-                        {cart.length > 0 && (
-                          <span className="absolute -top-2 -right-2 bg-red-500 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs">
-                            {cart.reduce((sum, item) => sum + item.quantity, 0)}
-                          </span>
-                        )}
-                      </button>
-                      <button onClick={handleLogout} className="bg-red-500 text-white px-2 md:px-3 py-2 rounded-lg text-sm hover:bg-red-600 transition">🚪</button>
-                    </div>
-                  </div>
-                </div>
-              </header>
+          const pedido = {
+            nombre,
+            telefono,
+            notas,
+            productos: carrito,
+            estado: "pendiente"
+          };
 
-              <div className="bg-white shadow-md sticky top-16 md:top-20 z-30">
-                <div className="container mx-auto px-4 py-4">
-                  <div className="flex gap-2 overflow-x-auto">
-                    {categories.map(cat => (
-                      <button key={cat.id} onClick={() => setSelectedCategory(cat.id)}
-                        className={`px-4 py-2 rounded-full font-medium whitespace-nowrap transition ${
-                          selectedCategory === cat.id ? 'bg-amber-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                        }`}>
-                        {cat.name}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
+          const ok = await enviarPedidoAFirebase(pedido);
 
-              <div className="container mx-auto px-4 py-8">
-                {loadingProducts ? (
-                  <div className="text-center py-12">
-                    <div className="text-6xl mb-4 animate-bounce">⏳</div>
-                    <p className="text-xl text-gray-600">Cargando productos...</p>
-                  </div>
-                ) : menuItems.length === 0 ? (
-                  <div className="text-center py-12 bg-white rounded-lg shadow">
-                    <div className="text-6xl mb-4">📦</div>
-                    <p className="text-xl text-gray-600 mb-4">No hay productos disponibles</p>
-                    <p className="text-gray-500">Los productos aparecerán cuando se agreguen desde el admin</p>
-                  </div>
-                ) : filteredItems.length === 0 ? (
-                  <div className="text-center py-12 bg-white rounded-lg shadow">
-                    <div className="text-6xl mb-4">🔍</div>
-                    <p className="text-xl text-gray-600">No hay productos en esta categoría</p>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {filteredItems.map(item => (
-                      <div key={item.id} className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition transform hover:-translate-y-1">
-                        <div className="h-48 overflow-hidden">
-                          <img src={item.image} alt={item.name} className="w-full h-full object-cover"/>
-                        </div>
-                        <div className="p-5">
-                          <h3 className="text-xl font-bold text-gray-800 mb-2">{item.name}</h3>
-                          <p className="text-gray-600 text-sm mb-4">{item.description}</p>
-                          <div className="flex justify-between items-center">
-                            <p className="text-lg font-bold text-amber-700">${item.price}</p>
-                            <button onClick={() => addToCart(item)}
-                              className="bg-amber-600 text-white px-4 py-2 rounded-lg hover:bg-amber-700 transition">
-                              Agregar
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+          if (ok) {
+            alert("🎉 Pedido realizado con éxito");
+            localStorage.removeItem("carrito");
+            document.getElementById("pedidoModal").classList.add("hidden");
+          }
+        });
+      }
+    });
+  </script>
 
+  <!-- LIBRERÍAS DE REACT -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <!-- INICIA REACT -->
+  <script type="text/babel">
+
+    const CafeLaCabana = () => {
+      const [productos, setProductos] = React.useState([]);
+      const [carrito, setCarrito] = React.useState(
+        JSON.parse(localStorage.getItem("carrito") || "[]")
+      );
+
+      React.useEffect(() => {
+        async function cargarProductos() {
+          const res = await fetch("productos.json");
+          const data = await res.json();
+          setProductos(data);
+        }
+        cargarProductos();
+      }, []);
+
+      const agregarAlCarrito = (producto) => {
+        const nuevo = [...carrito, producto];
+        setCarrito(nuevo);
+        localStorage.setItem("carrito", JSON.stringify(nuevo));
+      };
+
+      return (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {productos.map((p, index) => (
+            <div key={index} className="bg-white p-4 shadow rounded">
+              <img src={p.imagen} className="w-full h-32 object-cover rounded"/>
+              <h3 className="font-bold mt-2">{p.nombre}</h3>
+              <p className="text-gray-600">${p.precio}</p>
+              <button
+                onClick={() => agregarAlCarrito(p)}
+                className="bg-amber-700 text-white px-3 py-1 rounded mt-2">
+                Agregar
+              </button>
             </div>
-          );
-        };
+          ))}
+        </div>
+      );
+    };
 
-        ReactDOM.render(<CafeLaCabana />, document.getElementById("root"));
-    </script>
-</body>
-</html>
+    ReactDOM.createRoot(document.getElementById("root"))
+      .render(<CafeLaCabana />);
+  </script>
+   </body>
+   </html>
+
