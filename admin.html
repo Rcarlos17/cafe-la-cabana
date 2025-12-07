@@ -5,36 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin - Café La Cabaña</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
     <div id="root"></div>
     
-    <!-- Firebase -->
-    <script type="module">
-      import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-      import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, deleteDoc, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+    <script>
+      // CONFIGURACIÓN DE SUPABASE
+      const SUPABASE_URL = 'https://cxcxtrhxkptchqmitvbr.supabase.co';
+      const SUPABASE_KEY = 'sb_publishable_QyiQjzIMUcj_x74gzUDjQw_aaODJR7R';
+      const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-      const firebaseConfig = {
-        apiKey: "AIzaSyAcnpjZmvIX1qdHkj4j0TTg13tOVYbZpn0",
-        authDomain: "cafe-la-cabana-30fa5.firebaseapp.com",
-        projectId: "cafe-la-cabana-30fa5",
-        storageBucket: "cafe-la-cabana-30fa5.firebasestorage.app",
-        messagingSenderId: "1013891358492",
-        appId: "1:1013891358492:web:a80b4dff4aafe1375ea4d9"
-      };
-
-      const app = initializeApp(firebaseConfig);
-      const db = getFirestore(app);
-      
-      window.firebaseDB = db;
-      window.firestoreCollection = collection;
-      window.firestoreAddDoc = addDoc;
-      window.firestoreOnSnapshot = onSnapshot;
-      window.firestoreDoc = doc;
-      window.firestoreUpdateDoc = updateDoc;
-      window.firestoreDeleteDoc = deleteDoc;
-      window.firestoreServerTimestamp = serverTimestamp;
-      window.firebaseReady = true;
+      console.log('✅ Supabase Admin conectado');
     </script>
 
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -64,38 +46,44 @@
           ];
 
           React.useEffect(() => {
-            const waitForFirebase = setInterval(() => {
-              if (window.firebaseReady) {
-                clearInterval(waitForFirebase);
-                startListening();
-              }
-            }, 100);
-            return () => clearInterval(waitForFirebase);
+            loadProducts();
+            subscribeToProducts();
           }, []);
 
-          const startListening = () => {
+          const loadProducts = async () => {
             try {
-              const productsRef = window.firestoreCollection(window.firebaseDB, 'products');
-              const unsubscribe = window.firestoreOnSnapshot(productsRef, 
-                (snapshot) => {
-                  const productsData = [];
-                  snapshot.forEach((doc) => {
-                    productsData.push({ id: doc.id, ...doc.data() });
-                  });
-                  setProducts(productsData);
-                  setLoading(false);
-                },
-                (error) => {
-                  console.error('Error:', error);
-                  alert('Error al cargar productos');
-                  setLoading(false);
-                }
-              );
-              return () => unsubscribe();
+              const { data, error } = await supabase
+                .from('products')
+                .select('*')
+                .order('created_at', { ascending: false });
+
+              if (error) throw error;
+
+              console.log(`✅ ${data.length} productos cargados`);
+              setProducts(data);
+              setLoading(false);
             } catch (error) {
-              console.error('Error:', error);
+              console.error('❌ Error:', error);
+              alert('Error al cargar productos: ' + error.message);
               setLoading(false);
             }
+          };
+
+          const subscribeToProducts = () => {
+            const subscription = supabase
+              .channel('products_admin_changes')
+              .on('postgres_changes',
+                { event: '*', schema: 'public', table: 'products' },
+                (payload) => {
+                  console.log('🔄 Cambio detectado:', payload);
+                  loadProducts();
+                }
+              )
+              .subscribe();
+
+            return () => {
+              subscription.unsubscribe();
+            };
           };
 
           const openAddModal = () => {
@@ -119,32 +107,42 @@
           const handleSubmit = async (e) => {
             e.preventDefault();
             setIsSaving(true);
+
             try {
               const productData = {
                 name: formData.name,
                 category: formData.category,
                 price: parseFloat(formData.price),
                 description: formData.description,
-                image: formData.image,
-                updatedAt: window.firestoreServerTimestamp()
+                image: formData.image
               };
 
               if (editingProduct) {
-                const productRef = window.firestoreDoc(window.firebaseDB, 'products', editingProduct.id);
-                await window.firestoreUpdateDoc(productRef, productData);
+                productData.updated_at = new Date().toISOString();
+
+                const { error } = await supabase
+                  .from('products')
+                  .update(productData)
+                  .eq('id', editingProduct.id);
+
+                if (error) throw error;
+
                 alert('✅ Producto actualizado');
               } else {
-                productData.createdAt = window.firestoreServerTimestamp();
-                await window.firestoreAddDoc(
-                  window.firestoreCollection(window.firebaseDB, 'products'),
-                  productData
-                );
+                const { error } = await supabase
+                  .from('products')
+                  .insert([productData]);
+
+                if (error) throw error;
+
                 alert('✅ Producto agregado');
               }
+
               setShowModal(false);
               setFormData({ name: '', category: 'hot', price: '', description: '', image: '' });
+              loadProducts();
             } catch (error) {
-              console.error('Error:', error);
+              console.error('❌ Error:', error);
               alert('❌ Error: ' + error.message);
             } finally {
               setIsSaving(false);
@@ -154,9 +152,17 @@
           const deleteProduct = async (id) => {
             if (confirm('¿Eliminar este producto?')) {
               try {
-                await window.firestoreDeleteDoc(window.firestoreDoc(window.firebaseDB, 'products', id));
+                const { error } = await supabase
+                  .from('products')
+                  .delete()
+                  .eq('id', id);
+
+                if (error) throw error;
+
                 alert('✅ Producto eliminado');
+                loadProducts();
               } catch (error) {
+                console.error('❌ Error:', error);
                 alert('❌ Error: ' + error.message);
               }
             }
