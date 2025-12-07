@@ -1,340 +1,419 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin - Café La Cabaña</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Café La Cabaña</title>
+  <link rel="manifest" href="manifest.json">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
-<body>
-    <div id="root"></div>
-    
-    <script>
-      // CONFIGURACIÓN DE SUPABASE
-      const SUPABASE_URL = 'https://cxcxtrhxkptchqmitvbr.supabase.co';
-      const SUPABASE_KEY = 'sb_publishable_QyiQjzIMUcj_x74gzUDjQw_aaODJR7R';
-      const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-      console.log('✅ Supabase Admin conectado');
-    </script>
+<body class="bg-gray-100">
 
-    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    
-    <script type="text/babel">
-        const AdminPanel = () => {
-          const [products, setProducts] = React.useState([]);
-          const [loading, setLoading] = React.useState(true);
-          const [showModal, setShowModal] = React.useState(false);
-          const [editingProduct, setEditingProduct] = React.useState(null);
-          const [formData, setFormData] = React.useState({
-            name: '',
-            category: 'hot',
-            price: '',
-            description: '',
-            image: ''
-          });
-          const [isSaving, setIsSaving] = React.useState(false);
+  <!-- NAVBAR -->
+  <div class="flex justify-between items-center p-4 bg-amber-800 text-white shadow">
+    <h1 class="text-2xl font-bold">☕ Café La Cabaña</h1>
+    <button id="cartBtn" class="bg-white text-amber-800 px-4 py-2 rounded font-semibold hover:bg-amber-100 transition">
+      🛒 Carrito (<span id="cartCount">0</span>)
+    </button>
+  </div>
 
-          const categories = [
-            { id: 'hot', name: 'Bebidas Calientes' },
-            { id: 'cold', name: 'Bebidas Frías' },
-            { id: 'dessert', name: 'Postres' },
-            { id: 'snack', name: 'Snacks' }
-          ];
+  <!-- CONTENEDOR PRINCIPAL -->
+  <div id="root" class="p-4">
+    <div class="text-center py-12">
+      <div class="text-6xl mb-4 animate-bounce">☕</div>
+      <p class="text-xl text-gray-600">Cargando menú...</p>
+    </div>
+  </div>
 
-          React.useEffect(() => {
-            loadProducts();
-            subscribeToProducts();
-          }, []);
+  <!-- MODAL CARRITO -->
+  <div id="cartModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+    <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto">
+      <h2 class="text-2xl font-bold mb-4">🛒 Tu Carrito</h2>
+      <div id="cartItems" class="space-y-3 mb-4"></div>
+      <div id="cartTotal" class="text-xl font-bold mb-4 p-4 bg-amber-50 rounded-lg"></div>
+      <button id="checkoutBtn" class="bg-green-600 text-white w-full p-3 rounded-lg font-semibold hover:bg-green-700 transition mb-2">
+        Realizar Pedido
+      </button>
+      <button id="closeCartModal" class="text-gray-500 underline w-full p-2">Cerrar</button>
+    </div>
+  </div>
 
-          const loadProducts = async () => {
-            try {
-              const { data, error } = await supabase
-                .from('products')
-                .select('*')
-                .order('created_at', { ascending: false });
+  <!-- MODAL DE PEDIDO -->
+  <div id="pedidoModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+    <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-md mx-4">
+      <h2 class="text-2xl font-bold mb-4">📝 Datos del Pedido</h2>
+      <input id="clienteNombre" class="border p-3 w-full mb-3 rounded-lg" placeholder="Tu nombre *" required>
+      <input id="clienteTelefono" class="border p-3 w-full mb-3 rounded-lg" placeholder="Tu número de teléfono">
+      <textarea id="clienteNotas" class="border p-3 w-full mb-4 rounded-lg" rows="3" placeholder="Notas adicionales (opcional)"></textarea>
+      <button id="enviarPedidoBtn" class="bg-green-600 text-white w-full p-3 rounded-lg font-semibold hover:bg-green-700 transition mb-2">
+        ✅ Confirmar Pedido
+      </button>
+      <button id="cerrarPedidoModal" class="text-gray-500 underline w-full p-2">Cancelar</button>
+    </div>
+  </div>
 
-              if (error) throw error;
+  <script>
+    // CONFIGURACIÓN DE SUPABASE
+    const SUPABASE_URL = 'https://cxcxtrhxkptchqmitvbr.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_QyiQjzIMUcj_x74gzUDjQw_aaODJR7R';
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-              console.log(`✅ ${data.length} productos cargados`);
-              setProducts(data);
-              setLoading(false);
-            } catch (error) {
-              console.error('❌ Error:', error);
-              alert('Error al cargar productos: ' + error.message);
-              setLoading(false);
-            }
-          };
+    console.log('✅ Supabase conectado');
+  </script>
 
-          const subscribeToProducts = () => {
-            const subscription = supabase
-              .channel('products_admin_changes')
-              .on('postgres_changes',
-                { event: '*', schema: 'public', table: 'products' },
-                (payload) => {
-                  console.log('🔄 Cambio detectado:', payload);
-                  loadProducts();
-                }
-              )
-              .subscribe();
+  <!-- LIBRERÍAS DE REACT -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-            return () => {
-              subscription.unsubscribe();
-            };
-          };
+  <!-- APP REACT -->
+  <script type="text/babel">
+    const CafeLaCabana = () => {
+      const [productos, setProductos] = React.useState([]);
+      const [loading, setLoading] = React.useState(true);
+      const [carrito, setCarrito] = React.useState([]);
+      const [filter, setFilter] = React.useState('all');
 
-          const openAddModal = () => {
-            setEditingProduct(null);
-            setFormData({ name: '', category: 'hot', price: '', description: '', image: '' });
-            setShowModal(true);
-          };
+      const categories = [
+        { id: 'all', name: 'Todos', icon: '🍽️' },
+        { id: 'hot', name: 'Calientes', icon: '☕' },
+        { id: 'cold', name: 'Frías', icon: '🧊' },
+        { id: 'dessert', name: 'Postres', icon: '🍰' },
+        { id: 'snack', name: 'Snacks', icon: '🍪' }
+      ];
 
-          const openEditModal = (product) => {
-            setEditingProduct(product);
-            setFormData({
-              name: product.name,
-              category: product.category,
-              price: product.price,
-              description: product.description,
-              image: product.image
-            });
-            setShowModal(true);
-          };
+      React.useEffect(() => {
+        cargarCarrito();
+        cargarProductos();
+        suscribirseAProductos();
+      }, []);
 
-          const handleSubmit = async (e) => {
-            e.preventDefault();
-            setIsSaving(true);
-
-            try {
-              const productData = {
-                name: formData.name,
-                category: formData.category,
-                price: parseFloat(formData.price),
-                description: formData.description,
-                image: formData.image
-              };
-
-              if (editingProduct) {
-                productData.updated_at = new Date().toISOString();
-
-                const { error } = await supabase
-                  .from('products')
-                  .update(productData)
-                  .eq('id', editingProduct.id);
-
-                if (error) throw error;
-
-                alert('✅ Producto actualizado');
-              } else {
-                const { error } = await supabase
-                  .from('products')
-                  .insert([productData]);
-
-                if (error) throw error;
-
-                alert('✅ Producto agregado');
-              }
-
-              setShowModal(false);
-              setFormData({ name: '', category: 'hot', price: '', description: '', image: '' });
-              loadProducts();
-            } catch (error) {
-              console.error('❌ Error:', error);
-              alert('❌ Error: ' + error.message);
-            } finally {
-              setIsSaving(false);
-            }
-          };
-
-          const deleteProduct = async (id) => {
-            if (confirm('¿Eliminar este producto?')) {
-              try {
-                const { error } = await supabase
-                  .from('products')
-                  .delete()
-                  .eq('id', id);
-
-                if (error) throw error;
-
-                alert('✅ Producto eliminado');
-                loadProducts();
-              } catch (error) {
-                console.error('❌ Error:', error);
-                alert('❌ Error: ' + error.message);
-              }
-            }
-          };
-
-          const getCategoryName = (categoryId) => {
-            return categories.find(c => c.id === categoryId)?.name || categoryId;
-          };
-
-          if (loading) {
-            return (
-              <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-                <div className="text-center">
-                  <div className="text-6xl mb-4 animate-bounce">☕</div>
-                  <p className="text-xl text-gray-600">Cargando...</p>
-                </div>
-              </div>
-            );
+      const cargarCarrito = () => {
+        try {
+          const saved = localStorage.getItem("carrito");
+          if (saved) {
+            const carritoGuardado = JSON.parse(saved);
+            setCarrito(carritoGuardado);
+            updateCartCount(carritoGuardado);
           }
+        } catch (e) {
+          console.error("Error cargando carrito:", e);
+        }
+      };
 
-          return (
-            <div className="min-h-screen bg-gray-100">
-              <header className="bg-gradient-to-r from-amber-800 to-orange-700 text-white shadow-lg">
-                <div className="container mx-auto px-4 py-6">
+      const cargarProductos = async () => {
+        try {
+          const { data, error } = await supabase
+            .from('products')
+            .select('*')
+            .order('created_at', { ascending: false });
+
+          if (error) throw error;
+
+          console.log(`✅ ${data.length} productos cargados`);
+          setProductos(data);
+          setLoading(false);
+        } catch (error) {
+          console.error("❌ Error cargando productos:", error);
+          alert("Error al cargar productos: " + error.message);
+          setLoading(false);
+        }
+      };
+
+      const suscribirseAProductos = () => {
+        const subscription = supabase
+          .channel('products_changes')
+          .on('postgres_changes', 
+            { event: '*', schema: 'public', table: 'products' },
+            (payload) => {
+              console.log('🔄 Cambio detectado en productos:', payload);
+              cargarProductos();
+            }
+          )
+          .subscribe();
+
+        return () => {
+          subscription.unsubscribe();
+        };
+      };
+
+      const agregarAlCarrito = (producto) => {
+        const itemExistente = carrito.find(item => item.id === producto.id);
+        let nuevoCarrito;
+
+        if (itemExistente) {
+          nuevoCarrito = carrito.map(item =>
+            item.id === producto.id
+              ? { ...item, quantity: item.quantity + 1 }
+              : item
+          );
+        } else {
+          nuevoCarrito = [...carrito, { ...producto, quantity: 1 }];
+        }
+
+        setCarrito(nuevoCarrito);
+        localStorage.setItem("carrito", JSON.stringify(nuevoCarrito));
+        updateCartCount(nuevoCarrito);
+        
+        alert(`✅ ${producto.name} agregado al carrito`);
+      };
+
+      const updateCartCount = (cart) => {
+        const count = cart.reduce((sum, item) => sum + item.quantity, 0);
+        const countElement = document.getElementById('cartCount');
+        if (countElement) {
+          countElement.textContent = count;
+        }
+      };
+
+      const productosFiltrados = filter === 'all' 
+        ? productos 
+        : productos.filter(p => p.category === filter);
+
+      if (loading) {
+        return (
+          <div className="text-center py-12">
+            <div className="text-6xl mb-4 animate-bounce">☕</div>
+            <p className="text-xl text-gray-600">Cargando menú...</p>
+          </div>
+        );
+      }
+
+      if (productos.length === 0) {
+        return (
+          <div className="text-center py-12">
+            <div className="text-6xl mb-4">📦</div>
+            <p className="text-xl text-gray-600 mb-4">No hay productos disponibles</p>
+            <a href="admin.html" className="bg-amber-700 text-white px-6 py-3 rounded-lg inline-block hover:bg-amber-800 transition">
+              Ir al Panel Admin
+            </a>
+          </div>
+        );
+      }
+
+      return (
+        <div>
+          {/* Filtros */}
+          <div className="mb-6 overflow-x-auto">
+            <div className="flex gap-2 pb-2">
+              {categories.map(cat => (
+                <button
+                  key={cat.id}
+                  onClick={() => setFilter(cat.id)}
+                  className={`px-4 py-2 rounded-lg font-semibold whitespace-nowrap transition ${
+                    filter === cat.id
+                      ? 'bg-amber-700 text-white'
+                      : 'bg-white text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  {cat.icon} {cat.name}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Grid de Productos */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {productosFiltrados.map((p) => (
+              <div key={p.id} className="bg-white rounded-lg shadow hover:shadow-lg transition overflow-hidden">
+                <img 
+                  src={p.image} 
+                  alt={p.name}
+                  className="w-full h-48 object-cover"
+                  onError={(e) => {
+                    e.target.src = 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=400&h=300&fit=crop';
+                  }}
+                />
+                <div className="p-4">
+                  <h3 className="font-bold text-lg mb-1">{p.name}</h3>
+                  <p className="text-gray-600 text-sm mb-3 line-clamp-2">{p.description}</p>
                   <div className="flex justify-between items-center">
-                    <div>
-                      <h1 className="text-3xl font-bold">Panel de Administración</h1>
-                      <p className="text-amber-100 text-sm mt-1">Café La Cabaña</p>
-                    </div>
-                    <div className="flex gap-2">
-                      <a href="index.html" className="bg-white text-amber-800 px-4 py-2 rounded-lg font-semibold hover:bg-amber-100 transition">Ver Menú</a>
-                      <a href="pedidos.html" className="bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700 transition">Pedidos</a>
-                    </div>
-                  </div>
-                </div>
-              </header>
-
-              <div className="container mx-auto px-4 py-8">
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-                  <div className="bg-white rounded-lg shadow p-6">
-                    <div className="text-gray-500 text-sm mb-1">Total Productos</div>
-                    <div className="text-3xl font-bold text-gray-800">{products.length}</div>
-                  </div>
-                  <div className="bg-white rounded-lg shadow p-6">
-                    <div className="text-gray-500 text-sm mb-1">Bebidas Calientes</div>
-                    <div className="text-3xl font-bold text-orange-600">{products.filter(p => p.category === 'hot').length}</div>
-                  </div>
-                  <div className="bg-white rounded-lg shadow p-6">
-                    <div className="text-gray-500 text-sm mb-1">Bebidas Frías</div>
-                    <div className="text-3xl font-bold text-blue-600">{products.filter(p => p.category === 'cold').length}</div>
-                  </div>
-                  <div className="bg-white rounded-lg shadow p-6">
-                    <div className="text-gray-500 text-sm mb-1">Postres & Snacks</div>
-                    <div className="text-3xl font-bold text-pink-600">{products.filter(p => p.category === 'dessert' || p.category === 'snack').length}</div>
-                  </div>
-                </div>
-
-                <div className="mb-6">
-                  <button onClick={openAddModal} className="bg-green-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-green-700 transition text-lg">
-                    ➕ Agregar Nuevo Producto
-                  </button>
-                </div>
-
-                {products.length === 0 ? (
-                  <div className="bg-white rounded-lg shadow p-12 text-center">
-                    <div className="text-6xl mb-4">📦</div>
-                    <p className="text-gray-500 text-lg mb-4">No hay productos registrados</p>
-                    <button onClick={openAddModal} className="bg-green-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-green-700 transition">
-                      Agregar primer producto
+                    <span className="text-2xl font-bold text-green-600">${p.price}</span>
+                    <button
+                      onClick={() => agregarAlCarrito(p)}
+                      className="bg-amber-700 text-white px-4 py-2 rounded-lg font-semibold hover:bg-amber-800 transition"
+                    >
+                      Agregar
                     </button>
                   </div>
-                ) : (
-                  <div className="bg-white rounded-lg shadow overflow-hidden">
-                    <div className="overflow-x-auto">
-                      <table className="w-full">
-                        <thead className="bg-gray-50 border-b">
-                          <tr>
-                            <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase">Imagen</th>
-                            <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase">Nombre</th>
-                            <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase">Categoría</th>
-                            <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase">Precio</th>
-                            <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase">Descripción</th>
-                            <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase">Acciones</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-200">
-                          {products.map(product => (
-                            <tr key={product.id} className="hover:bg-gray-50">
-                              <td className="px-6 py-4">
-                                <img src={product.image} alt={product.name} className="w-16 h-16 object-cover rounded-lg"/>
-                              </td>
-                              <td className="px-6 py-4 font-semibold text-gray-800">{product.name}</td>
-                              <td className="px-6 py-4">
-                                <span className="px-3 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-800">
-                                  {getCategoryName(product.category)}
-                                </span>
-                              </td>
-                              <td className="px-6 py-4 font-bold text-green-600">${product.price}</td>
-                              <td className="px-6 py-4 text-sm text-gray-600 max-w-xs truncate">{product.description}</td>
-                              <td className="px-6 py-4">
-                                <div className="flex gap-2">
-                                  <button onClick={() => openEditModal(product)} className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 transition text-sm">✏️ Editar</button>
-                                  <button onClick={() => deleteProduct(product.id)} className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition text-sm">🗑️ Eliminar</button>
-                                </div>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {showModal && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-                  <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-                    <div className="p-6">
-                      <div className="flex justify-between items-center mb-6">
-                        <h2 className="text-2xl font-bold text-gray-800">{editingProduct ? 'Editar Producto' : 'Agregar Nuevo Producto'}</h2>
-                        <button onClick={() => setShowModal(false)} disabled={isSaving} className="text-gray-500 hover:text-gray-700 text-2xl">✕</button>
-                      </div>
-
-                      <form onSubmit={handleSubmit}>
-                        <div className="space-y-4">
-                          <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">Nombre del Producto *</label>
-                            <input type="text" required value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} 
-                              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500" placeholder="Ej: Café Americano" disabled={isSaving}/>
-                          </div>
-                          <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">Categoría *</label>
-                            <select required value={formData.category} onChange={(e) => setFormData({...formData, category: e.target.value})} 
-                              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500" disabled={isSaving}>
-                              {categories.map(cat => (<option key={cat.id} value={cat.id}>{cat.name}</option>))}
-                            </select>
-                          </div>
-                          <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">Precio ($) *</label>
-                            <input type="number" required min="0" step="0.01" value={formData.price} onChange={(e) => setFormData({...formData, price: e.target.value})} 
-                              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500" placeholder="Ej: 45" disabled={isSaving}/>
-                          </div>
-                          <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">Descripción *</label>
-                            <textarea required value={formData.description} onChange={(e) => setFormData({...formData, description: e.target.value})} 
-                              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500" rows="3" 
-                              placeholder="Ej: Espresso suave con agua caliente" disabled={isSaving}/>
-                          </div>
-                          <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">URL de la Imagen *</label>
-                            <input type="url" required value={formData.image} onChange={(e) => setFormData({...formData, image: e.target.value})} 
-                              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500" 
-                              placeholder="https://ejemplo.com/imagen.jpg" disabled={isSaving}/>
-                            {formData.image && (<img src={formData.image} alt="Preview" className="mt-3 w-32 h-32 object-cover rounded-lg" onError={(e) => e.target.style.display = 'none'}/>)}
-                          </div>
-                        </div>
-                        <div className="flex gap-4 mt-6">
-                          <button type="submit" disabled={isSaving} className="flex-1 bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700 transition disabled:bg-gray-400 disabled:cursor-not-allowed">
-                            {isSaving ? '⏳ Guardando...' : (editingProduct ? '💾 Guardar Cambios' : '➕ Agregar Producto')}
-                          </button>
-                          <button type="button" onClick={() => setShowModal(false)} disabled={isSaving} className="flex-1 bg-gray-300 text-gray-700 py-3 rounded-lg font-semibold hover:bg-gray-400 transition disabled:opacity-50">Cancelar</button>
-                        </div>
-                      </form>
-                    </div>
-                  </div>
                 </div>
-              )}
-            </div>
-          );
-        };
+              </div>
+            ))}
+          </div>
 
-        ReactDOM.render(<AdminPanel />, document.getElementById('root'));
-    </script>
+          {productosFiltrados.length === 0 && (
+            <div className="text-center py-12">
+              <p className="text-xl text-gray-500">No hay productos en esta categoría</p>
+            </div>
+          )}
+        </div>
+      );
+    };
+
+    const container = document.getElementById('root');
+    const root = ReactDOM.createRoot(container);
+    root.render(<CafeLaCabana />);
+  </script>
+
+  <!-- GESTIÓN DEL CARRITO -->
+  <script>
+    document.getElementById('cartBtn').addEventListener('click', () => {
+      mostrarCarrito();
+      document.getElementById('cartModal').classList.remove('hidden');
+    });
+
+    document.getElementById('closeCartModal').addEventListener('click', () => {
+      document.getElementById('cartModal').classList.add('hidden');
+    });
+
+    document.getElementById('checkoutBtn').addEventListener('click', () => {
+      const carrito = JSON.parse(localStorage.getItem('carrito') || '[]');
+      if (carrito.length === 0) {
+        alert('Tu carrito está vacío');
+        return;
+      }
+      document.getElementById('cartModal').classList.add('hidden');
+      document.getElementById('pedidoModal').classList.remove('hidden');
+    });
+
+    document.getElementById('cerrarPedidoModal').addEventListener('click', () => {
+      document.getElementById('pedidoModal').classList.add('hidden');
+    });
+
+    function mostrarCarrito() {
+      const carrito = JSON.parse(localStorage.getItem('carrito') || '[]');
+      const container = document.getElementById('cartItems');
+      
+      if (carrito.length === 0) {
+        container.innerHTML = '<p class="text-center text-gray-500 py-8">Tu carrito está vacío</p>';
+        document.getElementById('cartTotal').innerHTML = '';
+        document.getElementById('checkoutBtn').disabled = true;
+        return;
+      }
+
+      document.getElementById('checkoutBtn').disabled = false;
+
+      let html = '';
+      let total = 0;
+
+      carrito.forEach((item, index) => {
+        const subtotal = item.price * item.quantity;
+        total += subtotal;
+
+        html += `
+          <div class="flex items-center gap-3 bg-gray-50 p-3 rounded-lg">
+            <img src="${item.image}" alt="${item.name}" class="w-16 h-16 object-cover rounded" 
+              onerror="this.src='https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=100&h=100&fit=crop'">
+            <div class="flex-1">
+              <div class="font-semibold">${item.name}</div>
+              <div class="text-sm text-gray-600">$${item.price} x ${item.quantity}</div>
+              <div class="font-bold text-amber-700">$${subtotal.toFixed(2)}</div>
+            </div>
+            <div class="flex flex-col gap-1">
+              <button onclick="cambiarCantidad(${index}, 1)" class="bg-green-500 text-white px-2 py-1 rounded text-xs hover:bg-green-600">+</button>
+              <button onclick="cambiarCantidad(${index}, -1)" class="bg-red-500 text-white px-2 py-1 rounded text-xs hover:bg-red-600">-</button>
+            </div>
+          </div>
+        `;
+      });
+
+      container.innerHTML = html;
+      document.getElementById('cartTotal').innerHTML = `
+        <div class="flex justify-between items-center">
+          <span class="text-lg">Total:</span>
+          <span class="text-2xl font-bold text-green-600">$${total.toFixed(2)}</span>
+        </div>
+      `;
+    }
+
+    function cambiarCantidad(index, cambio) {
+      let carrito = JSON.parse(localStorage.getItem('carrito') || '[]');
+      
+      if (carrito[index]) {
+        carrito[index].quantity += cambio;
+        
+        if (carrito[index].quantity <= 0) {
+          carrito.splice(index, 1);
+        }
+        
+        localStorage.setItem('carrito', JSON.stringify(carrito));
+        mostrarCarrito();
+        
+        const count = carrito.reduce((sum, item) => sum + item.quantity, 0);
+        document.getElementById('cartCount').textContent = count;
+      }
+    }
+
+    // ENVIAR PEDIDO A SUPABASE
+    document.getElementById('enviarPedidoBtn').addEventListener('click', async () => {
+      const nombre = document.getElementById('clienteNombre').value.trim();
+      const telefono = document.getElementById('clienteTelefono').value.trim();
+      const notas = document.getElementById('clienteNotas').value.trim();
+
+      if (!nombre) {
+        alert('⚠️ Por favor ingresa tu nombre');
+        return;
+      }
+
+      const carrito = JSON.parse(localStorage.getItem('carrito') || '[]');
+
+      if (carrito.length === 0) {
+        alert('⚠️ Tu carrito está vacío');
+        return;
+      }
+
+      const total = carrito.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+
+      const items = carrito.map(item => ({
+        name: item.name,
+        price: item.price,
+        quantity: item.quantity,
+        image: item.image
+      }));
+
+      const pedido = {
+        customer_name: nombre,
+        phone: telefono,
+        notes: notas,
+        items: items,
+        total: parseFloat(total.toFixed(2)),
+        status: 'pending'
+      };
+
+      const btn = document.getElementById('enviarPedidoBtn');
+      btn.disabled = true;
+      btn.textContent = '⏳ Enviando...';
+
+      try {
+        const { data, error } = await supabase
+          .from('orders')
+          .insert([pedido])
+          .select();
+
+        if (error) throw error;
+
+        console.log('✅ Pedido guardado:', data);
+        alert('🎉 ¡Pedido realizado con éxito!\n\nTu pedido está siendo procesado.');
+        
+        localStorage.removeItem('carrito');
+        document.getElementById('cartCount').textContent = '0';
+        document.getElementById('pedidoModal').classList.add('hidden');
+        
+        document.getElementById('clienteNombre').value = '';
+        document.getElementById('clienteTelefono').value = '';
+        document.getElementById('clienteNotas').value = '';
+
+      } catch (error) {
+        console.error('❌ Error:', error);
+        alert('❌ Error al enviar el pedido: ' + error.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '✅ Confirmar Pedido';
+      }
+    });
+  </script>
+
 </body>
 </html>
