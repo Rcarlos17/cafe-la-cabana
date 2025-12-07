@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Café La Cabaña</title>
+  <link rel="manifest" href="manifest.json">
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 
@@ -13,59 +14,54 @@
   <div class="flex justify-between items-center p-4 bg-amber-800 text-white shadow">
     <h1 class="text-2xl font-bold">☕ Café La Cabaña</h1>
 
-    <div class="flex gap-4">
-      <button id="loginBtn" class="bg-white text-amber-800 px-4 py-2 rounded">Iniciar sesión</button>
-      <button id="cartBtn" class="bg-white text-amber-800 px-4 py-2 rounded">🛒 Carrito</button>
+    <div class="flex gap-2">
+      <button id="cartBtn" class="bg-white text-amber-800 px-4 py-2 rounded font-semibold hover:bg-amber-100 transition">
+        🛒 Carrito (<span id="cartCount">0</span>)
+      </button>
     </div>
   </div>
 
   <!-- CONTENEDOR PRINCIPAL -->
-  <div id="root" class="p-4"></div>
-
-  <!-- MODAL LOGIN -->
-  <div id="loginModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
-    <div class="bg-white p-6 rounded shadow w-80">
-      <h2 class="text-xl font-bold mb-4">Iniciar sesión</h2>
-
-      <input id="emailInput" type="email" class="border p-2 w-full mb-2" placeholder="Correo">
-      <input id="passwordInput" type="password" class="border p-2 w-full mb-4" placeholder="Contraseña">
-
-      <button id="loginEmailBtn" class="bg-amber-700 text-white w-full p-2 rounded mb-2">Entrar</button>
-      <button id="loginGoogleBtn" class="bg-red-600 text-white w-full p-2 rounded">Entrar con Google</button>
-
-      <button id="closeLoginModal" class="mt-4 text-gray-500 underline w-full">Cerrar</button>
+  <div id="root" class="p-4">
+    <div class="text-center py-12">
+      <div class="text-6xl mb-4 animate-bounce">☕</div>
+      <p class="text-xl text-gray-600">Cargando menú...</p>
     </div>
   </div>
 
   <!-- MODAL CARRITO -->
-  <div id="cartModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
-    <div class="bg-white p-6 rounded shadow w-96">
-      <h2 class="text-xl font-bold mb-4">🛒 Carrito</h2>
-      <div id="cartItems"></div>
-      <button id="checkoutBtn" class="bg-green-600 text-white w-full p-2 rounded mt-4">Realizar pedido</button>
-      <button id="closeCartModal" class="mt-4 text-gray-500 underline w-full">Cerrar</button>
+  <div id="cartModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+    <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto">
+      <h2 class="text-2xl font-bold mb-4">🛒 Tu Carrito</h2>
+      <div id="cartItems" class="space-y-3 mb-4"></div>
+      <div id="cartTotal" class="text-xl font-bold mb-4 p-4 bg-amber-50 rounded-lg"></div>
+      <button id="checkoutBtn" class="bg-green-600 text-white w-full p-3 rounded-lg font-semibold hover:bg-green-700 transition mb-2">
+        Realizar Pedido
+      </button>
+      <button id="closeCartModal" class="text-gray-500 underline w-full p-2">Cerrar</button>
     </div>
   </div>
 
   <!-- MODAL DE PEDIDO -->
-  <div id="pedidoModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
-    <div class="bg-white p-6 rounded shadow w-96">
-      <h2 class="text-xl font-bold mb-4">Realizar Pedido</h2>
+  <div id="pedidoModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+    <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-md mx-4">
+      <h2 class="text-2xl font-bold mb-4">📝 Datos del Pedido</h2>
 
-      <input id="clienteNombre" class="border p-2 w-full mb-2" placeholder="Tu nombre">
-      <input id="clienteTelefono" class="border p-2 w-full mb-2" placeholder="Tu número">
-      <textarea id="clienteNotas" class="border p-2 w-full mb-4" placeholder="Notas adicionales"></textarea>
+      <input id="clienteNombre" class="border p-3 w-full mb-3 rounded-lg" placeholder="Tu nombre *" required>
+      <input id="clienteTelefono" class="border p-3 w-full mb-3 rounded-lg" placeholder="Tu número de teléfono">
+      <textarea id="clienteNotas" class="border p-3 w-full mb-4 rounded-lg" rows="3" placeholder="Notas adicionales (opcional)"></textarea>
 
-      <button id="enviarPedidoBtn" class="bg-green-600 text-white w-full p-2 rounded">Enviar pedido</button>
-      <button id="cerrarPedidoModal" class="mt-4 text-gray-500 underline w-full">Cancelar</button>
+      <button id="enviarPedidoBtn" class="bg-green-600 text-white w-full p-3 rounded-lg font-semibold hover:bg-green-700 transition mb-2">
+        ✅ Confirmar Pedido
+      </button>
+      <button id="cerrarPedidoModal" class="text-gray-500 underline w-full p-2">Cancelar</button>
     </div>
   </div>
 
   <!-- FIREBASE CONFIG -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-    import { getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    import { getFirestore, collection, addDoc, serverTimestamp, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyAcnpjZmvIX1qdHkj4j0TTg13tOVYbZpn0",
@@ -78,71 +74,17 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
-    const auth = getAuth(app);
-    const googleProvider = new GoogleAuthProvider();
 
     window.db = db;
-    window.auth = auth;
-    window.googleProvider = googleProvider;
-    window.collection = collection;
-    window.addDoc = addDoc;
-    window.serverTimestamp = serverTimestamp;
+    window.firestoreCollection = collection;
+    window.firestoreAddDoc = addDoc;
+    window.firestoreServerTimestamp = serverTimestamp;
+    window.firestoreOnSnapshot = onSnapshot;
+    window.firestoreQuery = query;
+    window.firestoreOrderBy = orderBy;
+    window.firebaseReady = true;
 
-    console.log("🔥 Firebase cargado correctamente");
-  </script>
-  <!-- SCRIPT PARA ENVIAR PEDIDOS A FIRESTORE -->
-  <script>
-    async function enviarPedidoAFirebase(pedido) {
-      try {
-        await window.addDoc(window.collection(window.db, "orders"), {
-          ...pedido,
-          fecha: window.serverTimestamp()
-        });
-
-        console.log("✅ Pedido enviado correctamente");
-        return true;
-
-      } catch (error) {
-        console.error("❌ Error al guardar pedido:", error);
-        return false;
-      }
-    }
-
-    // EVENTO DEL BOTÓN "ENVIAR PEDIDO"
-    document.addEventListener("DOMContentLoaded", () => {
-      const btn = document.getElementById("enviarPedidoBtn");
-
-      if (btn) {
-        btn.addEventListener("click", async () => {
-          const nombre = document.getElementById("clienteNombre").value;
-          const telefono = document.getElementById("clienteTelefono").value;
-          const notas = document.getElementById("clienteNotas").value;
-
-          const carrito = JSON.parse(localStorage.getItem("carrito")) || [];
-
-          if (!nombre || carrito.length === 0) {
-            alert("Debes escribir tu nombre y tener productos en el carrito.");
-            return;
-          }
-
-          const pedido = {
-            nombre,
-            telefono,
-            notas,
-            productos: carrito,
-            estado: "pendiente"
-          };
-
-          const ok = await enviarPedidoAFirebase(pedido);
-
-          if (ok) {
-            alert("🎉 Pedido realizado con éxito");
-            localStorage.removeItem("carrito");
-            document.getElementById("pedidoModal").classList.add("hidden");
-          }
-        });
-      }
-    });
+    console.log("🔥 Firebase conectado");
   </script>
 
   <!-- LIBRERÍAS DE REACT -->
@@ -150,51 +92,362 @@
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-  <!-- INICIA REACT -->
+  <!-- APP REACT -->
   <script type="text/babel">
-
     const CafeLaCabana = () => {
       const [productos, setProductos] = React.useState([]);
-      const [carrito, setCarrito] = React.useState(
-        JSON.parse(localStorage.getItem("carrito") || "[]")
-      );
+      const [loading, setLoading] = React.useState(true);
+      const [carrito, setCarrito] = React.useState([]);
+      const [filter, setFilter] = React.useState('all');
+
+      const categories = [
+        { id: 'all', name: 'Todos', icon: '🍽️' },
+        { id: 'hot', name: 'Calientes', icon: '☕' },
+        { id: 'cold', name: 'Frías', icon: '🧊' },
+        { id: 'dessert', name: 'Postres', icon: '🍰' },
+        { id: 'snack', name: 'Snacks', icon: '🍪' }
+      ];
 
       React.useEffect(() => {
-        async function cargarProductos() {
-          const res = await fetch("productos.json");
-          const data = await res.json();
-          setProductos(data);
-        }
-        cargarProductos();
+        const loadCarrito = () => {
+          try {
+            const saved = localStorage.getItem("carrito");
+            if (saved) {
+              setCarrito(JSON.parse(saved));
+              updateCartCount(JSON.parse(saved));
+            }
+          } catch (e) {
+            console.error("Error cargando carrito:", e);
+          }
+        };
+
+        loadCarrito();
+
+        const waitForFirebase = setInterval(() => {
+          if (window.firebaseReady) {
+            clearInterval(waitForFirebase);
+            cargarProductosDeFirebase();
+          }
+        }, 100);
+
+        return () => clearInterval(waitForFirebase);
       }, []);
 
-      const agregarAlCarrito = (producto) => {
-        const nuevo = [...carrito, producto];
-        setCarrito(nuevo);
-        localStorage.setItem("carrito", JSON.stringify(nuevo));
+      const cargarProductosDeFirebase = () => {
+        try {
+          const productsRef = window.firestoreCollection(window.db, 'products');
+          
+          window.firestoreOnSnapshot(productsRef, 
+            (snapshot) => {
+              const productosData = [];
+              snapshot.forEach((doc) => {
+                productosData.push({ 
+                  id: doc.id, 
+                  ...doc.data() 
+                });
+              });
+              
+              console.log(`✅ ${productosData.length} productos cargados`);
+              setProductos(productosData);
+              setLoading(false);
+            },
+            (error) => {
+              console.error("Error cargando productos:", error);
+              alert("Error al cargar productos. Verifica tu conexión.");
+              setLoading(false);
+            }
+          );
+        } catch (error) {
+          console.error("Error:", error);
+          setLoading(false);
+        }
       };
 
+      const agregarAlCarrito = (producto) => {
+        const itemExistente = carrito.find(item => item.id === producto.id);
+        let nuevoCarrito;
+
+        if (itemExistente) {
+          nuevoCarrito = carrito.map(item =>
+            item.id === producto.id
+              ? { ...item, quantity: item.quantity + 1 }
+              : item
+          );
+        } else {
+          nuevoCarrito = [...carrito, { ...producto, quantity: 1 }];
+        }
+
+        setCarrito(nuevoCarrito);
+        localStorage.setItem("carrito", JSON.stringify(nuevoCarrito));
+        updateCartCount(nuevoCarrito);
+        
+        // Feedback visual
+        alert(`✅ ${producto.name} agregado al carrito`);
+      };
+
+      const updateCartCount = (cart) => {
+        const count = cart.reduce((sum, item) => sum + item.quantity, 0);
+        const countElement = document.getElementById('cartCount');
+        if (countElement) {
+          countElement.textContent = count;
+        }
+      };
+
+      const productosFiltrados = filter === 'all' 
+        ? productos 
+        : productos.filter(p => p.category === filter);
+
+      if (loading) {
+        return (
+          <div className="text-center py-12">
+            <div className="text-6xl mb-4 animate-bounce">☕</div>
+            <p className="text-xl text-gray-600">Cargando menú...</p>
+          </div>
+        );
+      }
+
+      if (productos.length === 0) {
+        return (
+          <div className="text-center py-12">
+            <div className="text-6xl mb-4">📦</div>
+            <p className="text-xl text-gray-600 mb-4">No hay productos disponibles</p>
+            <a href="admin.html" className="bg-amber-700 text-white px-6 py-3 rounded-lg inline-block hover:bg-amber-800 transition">
+              Ir al Panel Admin
+            </a>
+          </div>
+        );
+      }
+
       return (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {productos.map((p, index) => (
-            <div key={index} className="bg-white p-4 shadow rounded">
-              <img src={p.imagen} className="w-full h-32 object-cover rounded"/>
-              <h3 className="font-bold mt-2">{p.nombre}</h3>
-              <p className="text-gray-600">${p.precio}</p>
-              <button
-                onClick={() => agregarAlCarrito(p)}
-                className="bg-amber-700 text-white px-3 py-1 rounded mt-2">
-                Agregar
-              </button>
+        <div>
+          {/* Filtros de Categoría */}
+          <div className="mb-6 overflow-x-auto">
+            <div className="flex gap-2 pb-2">
+              {categories.map(cat => (
+                <button
+                  key={cat.id}
+                  onClick={() => setFilter(cat.id)}
+                  className={`px-4 py-2 rounded-lg font-semibold whitespace-nowrap transition ${
+                    filter === cat.id
+                      ? 'bg-amber-700 text-white'
+                      : 'bg-white text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  {cat.icon} {cat.name}
+                </button>
+              ))}
             </div>
-          ))}
+          </div>
+
+          {/* Grid de Productos */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {productosFiltrados.map((p) => (
+              <div key={p.id} className="bg-white rounded-lg shadow hover:shadow-lg transition overflow-hidden">
+                <img 
+                  src={p.image} 
+                  alt={p.name}
+                  className="w-full h-48 object-cover"
+                  onError={(e) => {
+                    e.target.src = 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=400&h=300&fit=crop';
+                  }}
+                />
+                <div className="p-4">
+                  <h3 className="font-bold text-lg mb-1">{p.name}</h3>
+                  <p className="text-gray-600 text-sm mb-3 line-clamp-2">{p.description}</p>
+                  <div className="flex justify-between items-center">
+                    <span className="text-2xl font-bold text-green-600">${p.price}</span>
+                    <button
+                      onClick={() => agregarAlCarrito(p)}
+                      className="bg-amber-700 text-white px-4 py-2 rounded-lg font-semibold hover:bg-amber-800 transition"
+                    >
+                      Agregar
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {productosFiltrados.length === 0 && (
+            <div className="text-center py-12">
+              <p className="text-xl text-gray-500">No hay productos en esta categoría</p>
+            </div>
+          )}
         </div>
       );
     };
 
-    ReactDOM.createRoot(document.getElementById("root"))
-      .render(<CafeLaCabana />);
+    // Renderizar la app
+    const container = document.getElementById('root');
+    const root = ReactDOM.createRoot(container);
+    root.render(<CafeLaCabana />);
   </script>
-   </body>
-   </html>
 
+  <!-- GESTIÓN DEL CARRITO -->
+  <script>
+    // Abrir modal del carrito
+    document.getElementById('cartBtn').addEventListener('click', () => {
+      mostrarCarrito();
+      document.getElementById('cartModal').classList.remove('hidden');
+    });
+
+    // Cerrar modal del carrito
+    document.getElementById('closeCartModal').addEventListener('click', () => {
+      document.getElementById('cartModal').classList.add('hidden');
+    });
+
+    // Ir a checkout
+    document.getElementById('checkoutBtn').addEventListener('click', () => {
+      const carrito = JSON.parse(localStorage.getItem('carrito') || '[]');
+      if (carrito.length === 0) {
+        alert('Tu carrito está vacío');
+        return;
+      }
+      document.getElementById('cartModal').classList.add('hidden');
+      document.getElementById('pedidoModal').classList.remove('hidden');
+    });
+
+    // Cerrar modal de pedido
+    document.getElementById('cerrarPedidoModal').addEventListener('click', () => {
+      document.getElementById('pedidoModal').classList.add('hidden');
+    });
+
+    function mostrarCarrito() {
+      const carrito = JSON.parse(localStorage.getItem('carrito') || '[]');
+      const container = document.getElementById('cartItems');
+      
+      if (carrito.length === 0) {
+        container.innerHTML = '<p class="text-center text-gray-500 py-8">Tu carrito está vacío</p>';
+        document.getElementById('cartTotal').innerHTML = '';
+        document.getElementById('checkoutBtn').disabled = true;
+        return;
+      }
+
+      document.getElementById('checkoutBtn').disabled = false;
+
+      let html = '';
+      let total = 0;
+
+      carrito.forEach((item, index) => {
+        const subtotal = item.price * item.quantity;
+        total += subtotal;
+
+        html += `
+          <div class="flex items-center gap-3 bg-gray-50 p-3 rounded-lg">
+            <img src="${item.image}" alt="${item.name}" class="w-16 h-16 object-cover rounded" 
+              onerror="this.src='https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=100&h=100&fit=crop'">
+            <div class="flex-1">
+              <div class="font-semibold">${item.name}</div>
+              <div class="text-sm text-gray-600">$${item.price} x ${item.quantity}</div>
+              <div class="font-bold text-amber-700">$${subtotal.toFixed(2)}</div>
+            </div>
+            <div class="flex flex-col gap-1">
+              <button onclick="cambiarCantidad(${index}, 1)" class="bg-green-500 text-white px-2 py-1 rounded text-xs hover:bg-green-600">+</button>
+              <button onclick="cambiarCantidad(${index}, -1)" class="bg-red-500 text-white px-2 py-1 rounded text-xs hover:bg-red-600">-</button>
+            </div>
+          </div>
+        `;
+      });
+
+      container.innerHTML = html;
+      document.getElementById('cartTotal').innerHTML = `
+        <div class="flex justify-between items-center">
+          <span class="text-lg">Total:</span>
+          <span class="text-2xl font-bold text-green-600">$${total.toFixed(2)}</span>
+        </div>
+      `;
+    }
+
+    function cambiarCantidad(index, cambio) {
+      let carrito = JSON.parse(localStorage.getItem('carrito') || '[]');
+      
+      if (carrito[index]) {
+        carrito[index].quantity += cambio;
+        
+        if (carrito[index].quantity <= 0) {
+          carrito.splice(index, 1);
+        }
+        
+        localStorage.setItem('carrito', JSON.stringify(carrito));
+        mostrarCarrito();
+        
+        // Actualizar contador
+        const count = carrito.reduce((sum, item) => sum + item.quantity, 0);
+        document.getElementById('cartCount').textContent = count;
+      }
+    }
+
+    // Enviar pedido a Firebase
+    document.getElementById('enviarPedidoBtn').addEventListener('click', async () => {
+      const nombre = document.getElementById('clienteNombre').value.trim();
+      const telefono = document.getElementById('clienteTelefono').value.trim();
+      const notas = document.getElementById('clienteNotas').value.trim();
+
+      if (!nombre) {
+        alert('⚠️ Por favor ingresa tu nombre');
+        return;
+      }
+
+      const carrito = JSON.parse(localStorage.getItem('carrito') || '[]');
+
+      if (carrito.length === 0) {
+        alert('⚠️ Tu carrito está vacío');
+        return;
+      }
+
+      // Calcular total
+      const total = carrito.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+
+      // Preparar items en el formato correcto
+      const items = carrito.map(item => ({
+        name: item.name,
+        price: item.price,
+        quantity: item.quantity,
+        image: item.image
+      }));
+
+      const pedido = {
+        customerName: nombre,
+        phone: telefono,
+        notes: notas,
+        items: items,
+        total: parseFloat(total.toFixed(2)),
+        status: 'pending',
+        createdAt: window.firestoreServerTimestamp()
+      };
+
+      // Deshabilitar botón
+      const btn = document.getElementById('enviarPedidoBtn');
+      btn.disabled = true;
+      btn.textContent = '⏳ Enviando...';
+
+      try {
+        await window.firestoreAddDoc(
+          window.firestoreCollection(window.db, 'orders'),
+          pedido
+        );
+
+        alert('🎉 ¡Pedido realizado con éxito!\n\nTu pedido está siendo procesado.');
+        
+        // Limpiar
+        localStorage.removeItem('carrito');
+        document.getElementById('cartCount').textContent = '0';
+        document.getElementById('pedidoModal').classList.add('hidden');
+        
+        // Limpiar formulario
+        document.getElementById('clienteNombre').value = '';
+        document.getElementById('clienteTelefono').value = '';
+        document.getElementById('clienteNotas').value = '';
+
+      } catch (error) {
+        console.error('Error:', error);
+        alert('❌ Error al enviar el pedido: ' + error.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '✅ Confirmar Pedido';
+      }
+    });
+  </script>
+
+</body>
+</html>
