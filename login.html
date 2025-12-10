@@ -100,7 +100,7 @@
         const continuar = confirm(`¡Hola ${usuarioData.nombre}! ¿Deseas continuar con tu cuenta?`);
         
         if (continuar) {
-          window.location.href = 'index.html';
+          window.location.href = 'index.html?v=' + Date.now();
         } else {
           sessionStorage.removeItem('usuario');
         }
@@ -194,11 +194,11 @@
         // Guardar en sessionStorage (solo para la sesión actual)
         sessionStorage.setItem('usuario', JSON.stringify(usuarioData));
 
-        // Redirigir al menú
+        // Redirigir al menú con versión actualizada
         btn.textContent = '✅ ¡Bienvenido! Redirigiendo...';
         
         setTimeout(() => {
-          window.location.href = 'index.html';
+          window.location.href = 'index.html?v=' + Date.now();
         }, 1000);
 
       } catch (error) {
